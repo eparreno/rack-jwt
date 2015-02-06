@@ -32,6 +32,13 @@ use Rack::JWT::Auth secret: 'you_secret_token_goes_here', exclude: ['/api/docs']
 Rails.application.config.middleware.use, Rack::JWT::Auth, secret: Rails.application.secrets.secret_key_base, exclude: ['/api/docs']
 ```
 
+## Generating tokens
+You can generate JSON Wen Tokens for your users using the `Token#encode` method
+
+```
+Rack::JWT::Token.encode(payload, secret)
+```
+
 ## Contributing
 
 1. Fork it ( https://github.com/[my-github-username]/rack-jwt/fork )
