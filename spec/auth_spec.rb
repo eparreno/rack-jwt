@@ -5,64 +5,107 @@ describe Rack::JWT::Auth do
 
   let(:issuer) { Rack::JWT::Token }
   let(:secret) { 'foo' }
+  let(:body)   {{ 'foo' => 'bar' }}
 
   let(:app) do
-    main_app = lambda { |env| [200, env, ['Hello']] }
-    Rack::JWT::Auth.new(main_app, {secret: secret})
+    main_app = lambda { |env| [200, env, [body.to_json]] }
+    Rack::JWT::Auth.new(main_app, { secret: secret })
   end
 
-  it 'raises an exception if no secret provided' do
-    expect{ Rack::JWT::Auth.new(main_app, {}) }.to raise_error
+  before do
+    get('/', {}, headers)
   end
 
-  it 'returns 200 ok if the request is authenticated' do
-    token = issuer.encode({ iss: 1 }, secret)
-    get('/', {}, { 'HTTP_AUTHORIZATION' => "Bearer #{token}" })
+  context 'when no secret provided' do
+    let(:headers) { {} }
 
-    expect(last_response.status).to eq 200
-    expect(last_response.body).to   eq 'Hello'
-
-    payload = last_response.header['jwt.payload']
-
-    expect(payload['iss']).to  eq(1)
+    it 'raises an exception' do
+      expect{ Rack::JWT::Auth.new(main_app, {}) }.to raise_error
+    end
   end
 
-  it 'returns 401 if the authorization header is missing' do
-    get('/')
+  context 'when no authorization header provided' do
+    let(:headers) { {} }
 
-    jsonResponse = JSON.parse(last_response.body)
+    subject { JSON.parse(last_response.body) }
 
-    expect(last_response.status).to eq(401)
-    expect(jsonResponse['error']).to eq('Missing Authorization header')
+    it 'returns 401 status code' do
+      expect(last_response.status).to eq(401)
+    end
+
+    it 'returns an error message' do
+      expect(subject['error']).to eq('Missing Authorization header')
+    end
   end
 
-  it 'returns 401 if the authorization header signature is invalid' do
-    token = issuer.encode({ iss: 1 }, 'invalid secret')
-    get('/', {}, { 'HTTP_AUTHORIZATION' => "Bearer #{token}" })
+  context 'when authorzation header does not contain the schema' do
+    let(:token) { issuer.encode({ iss: 1 }, secret) }
+    let(:headers) {{ 'HTTP_AUTHORIZATION' => token }}
 
-    jsonResponse = JSON.parse(last_response.body)
+    subject { JSON.parse(last_response.body) }
 
-    expect(last_response.status).to eq(401)
-    expect(jsonResponse['error']).to eq('Invalid JWT token')
+    it 'returns 401 status code' do
+      expect(last_response.status).to eq(401)
+    end
+
+    it 'returns an error message' do
+      expect(subject['error']).to eq('Invalid Authorization header format')
+    end
   end
 
-  it 'returns 401 if the header format is not Authorization: Bearer [token]' do
-    token = issuer.encode({ iss: 1 }, secret)
-    get('/', {}, { 'HTTP_AUTHORIZATION' => token })
+  context 'when authorization header contains an invalid schema' do
+    let(:token) { issuer.encode({ iss: 1 }, secret) }
+    let(:headers) {{ 'HTTP_AUTHORIZATION' => "WrongScheme #{token}" }}
 
-    jsonResponse = JSON.parse(last_response.body)
+    subject { JSON.parse(last_response.body) }
 
-    expect(last_response.status).to eq(401)
-    expect(jsonResponse['error']).to eq('Invalid Authorization header format')
+    it 'returns 401 status code' do
+      expect(last_response.status).to eq(401)
+    end
+
+    it 'returns an error message' do
+      expect(subject['error']).to eq('Invalid Authorization header format')
+    end
   end
 
-  it 'returns 401 if authorization scheme is not Bearer' do
-    token = issuer.encode({ iss: 1 }, secret)
-    get('/', {}, { 'HTTP_AUTHORIZATION' => "WrongScheme #{token}" })
+  context 'when token signature is invalid' do
+    let(:token) { issuer.encode({ iss: 1 }, 'invalid secret') }
+    let(:headers) {{ 'HTTP_AUTHORIZATION' => "Bearer #{token}" }}
 
-    jsonResponse = JSON.parse(last_response.body)
+    subject { JSON.parse(last_response.body) }
 
-    expect(last_response.status).to eq(401)
-    expect(jsonResponse['error']).to eq('Invalid Authorization header format')
+    it 'returns 401 status code' do
+      expect(last_response.status).to eq(401)
+    end
+
+    it 'returns an error message' do
+      expect(subject['error']).to eq('Invalid JWT token')
+    end
+  end
+
+  context 'when token is valid' do
+    let(:token) { issuer.encode({ iss: 1 }, secret) }
+    let(:headers) {{ 'HTTP_AUTHORIZATION' => "Bearer #{token}" }}
+
+    subject { JSON.parse(last_response.body) }
+
+    it 'returns 200 status code' do
+      expect(last_response.status).to eq(200)
+    end
+
+    it 'process the request' do
+      expect(subject).to eq(body)
+    end
+
+    it 'adds the token payload to the request' do
+      payload = last_response.header['jwt.payload']
+      expect(payload['iss']).to eq(1)
+    end
+
+    it 'adds the token header to the request' do
+      header = last_response.header['jwt.header']
+      expect(header['alg']).to eq('HS256')
+      expect(header['typ']).to eq('JWT')
+    end
   end
 end
