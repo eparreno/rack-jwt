@@ -15,7 +15,7 @@ module Rack
         elsif env["HTTP_AUTHORIZATION"]
           begin
             if env["HTTP_AUTHORIZATION"].split(" ").first != 'Bearer'
-              invalid_auth_header
+              return_error("Invalid Authorization header format")
             else
               token = env["HTTP_AUTHORIZATION"].split(" ")[-1]
               decoded_token = Token.decode(token, @secret)
@@ -24,40 +24,20 @@ module Rack
               @app.call(env)
             end
           rescue
-            unauthorized
+            return_error("Invalid JWT token")
           end
         else
-          no_auth_header
+          return_error("Missing Authorization header")
         end
       end
 
       private
 
-      def unauthorized
-        body = { error: "Invalid JWT token" }.to_json
+      def return_error(message)
+        body = { error: message }.to_json
         headers = {
                     'Content-Type' => 'application/json',
-                    'Content-Length' => body.bytesize.to_s
-                  }
-
-        return [401, headers, [body]]
-      end
-
-      def no_auth_header
-        body = { error: "Missing Authorization header" }.to_json
-        headers = {
-                    'Content-Type' => 'application/json',
-                    'Content-Length' => body.bytesize.to_s
-                  }
-
-        return [401, headers, [body]]
-      end
-
-      def invalid_auth_header
-        body = { error: "Invalid Authorization header format" }.to_json
-        headers = {
-                    'Content-Type' => 'application/json',
-                    'Content-Length' => body.bytesize.to_s
+                    'Content-Length' => message.bytesize.to_s
                   }
 
         return [401, headers, [body]]

@@ -1,4 +1,4 @@
-# Rack::Jwt
+# Rack::JWT
 
 This gem provides JSON Web Token (JWT) based authentication.
 
