@@ -5,7 +5,7 @@ require 'rack/jwt/version'
 
 Gem::Specification.new do |spec|
   spec.name          = "rack-jwt"
-  spec.version       = Rack::Jwt::VERSION
+  spec.version       = Rack::JWT::VERSION
   spec.authors       = ["Mr. Eigenbart"]
   spec.email         = ["eigenbart@gmail.com"]
   spec.summary       = %q{Rack middleware that provides authentication based on JSON Web Tokens.}
