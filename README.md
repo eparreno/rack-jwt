@@ -24,16 +24,30 @@ Or install it yourself as:
 
 ## Usage
 
-### sinatra
+`Rack::JWT::Auth` accepts several configuration options:
+
+* `secret` : required : String : A cryptographically secure String that serves as the HMAC SHA-256 secret for the JSON Web Token.
+* `verify` : optional : Boolean : Determines whether JWT will verify tokens when decoded. Default is `true`.
+* `options` : optional : Hash : A hash of options that are passed through to JWT to configure supported claims. See [the ruby-jwt docs](https://github.com/progrium/ruby-jwt#support-for-reserved-claim-names) for the available options. By default only expiration (exp) and Not Before (nbf) claims are verified.
+* `exclude` : optional : Array : An Array of path strings representing paths that should not check for JWT authentication tokens before allowing access.
+
+
+### Sinatra
 
 ```
-use Rack::JWT::Auth secret: 'you_secret_token_goes_here', exclude: ['/api/docs']
+use Rack::JWT::Auth secret: 'you_secret_token_goes_here', verify: true, options: {}, exclude: ['/api/docs']
+```
+
+### Cuba
+
+```
+Cuba.use Rack::JWT::Auth secret: 'you_secret_token_goes_here', verify: true, options: {}, exclude: ['/api/docs']
 ```
 
 ### Rails
 
 ```
-Rails.application.config.middleware.use, Rack::JWT::Auth, secret: Rails.application.secrets.secret_key_base, exclude: ['/api/docs']
+Rails.application.config.middleware.use, Rack::JWT::Auth, secret: Rails.application.secrets.secret_key_base, verify: true, options: {}, exclude: ['/api/docs']
 ```
 
 ## Generating tokens
