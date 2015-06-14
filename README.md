@@ -35,13 +35,13 @@ Or install it yourself as:
 ### Sinatra
 
 ```
-use Rack::JWT::Auth secret: 'you_secret_token_goes_here', verify: true, options: {}, exclude: ['/api/docs']
+use Rack::JWT::Auth, secret: 'you_secret_token_goes_here', verify: true, options: {}, exclude: ['/api/docs']
 ```
 
 ### Cuba
 
 ```
-Cuba.use Rack::JWT::Auth secret: 'you_secret_token_goes_here', verify: true, options: {}, exclude: ['/api/docs']
+Cuba.use Rack::JWT::Auth, secret: 'you_secret_token_goes_here', verify: true, options: {}, exclude: ['/api/docs']
 ```
 
 ### Rails
