@@ -27,7 +27,7 @@ module Rack
             env['jwt.header']  = decoded_token.last
             env['jwt.payload'] = decoded_token.first
             @app.call(env)
-          rescue
+          rescue ::JWT::DecodeError
             return_error('Invalid JWT token')
           end
         else
