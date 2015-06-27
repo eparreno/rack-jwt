@@ -101,6 +101,8 @@ describe Rack::JWT::Auth do
     let(:token) { issuer.encode({ iss: 1 }, 'invalid secret') }
     let(:headers) {{ 'HTTP_AUTHORIZATION' => "Bearer #{token}" }}
 
+    before { perform_request }
+
     subject { JSON.parse(last_response.body) }
 
     it 'returns 200 status code' do
@@ -157,6 +159,8 @@ describe Rack::JWT::Auth do
     let(:token) { issuer.encode({ iss: 1, iat: Time.now.to_i + 1000000 }, secret) }
     let(:headers) {{ 'HTTP_AUTHORIZATION' => "Bearer #{token}" }}
 
+    before { perform_request }
+
     subject { JSON.parse(last_response.body) }
 
     it 'returns 200 status code' do
@@ -189,6 +193,8 @@ describe Rack::JWT::Auth do
     let(:token) { issuer.encode({ iss: 1, iat: iat }, secret) }
     let(:headers) {{ 'HTTP_AUTHORIZATION' => "Bearer #{token}" }}
 
+    before { perform_request }
+
     subject { JSON.parse(last_response.body) }
 
     it 'returns 401 status code' do
@@ -209,6 +215,8 @@ describe Rack::JWT::Auth do
     end
     let(:token) { issuer.encode({ iss: 1, iat: iat }, secret) }
     let(:headers) {{ 'HTTP_AUTHORIZATION' => "Bearer #{token}" }}
+
+    before { perform_request }
 
     subject { JSON.parse(last_response.body) }
 
