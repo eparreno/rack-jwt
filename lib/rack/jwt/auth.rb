@@ -17,7 +17,7 @@ module Rack
       end
 
       def call(env)
-        if @exclude.include?(env['PATH_INFO'])
+        if @exclude.select {|ex| env['PATH_INFO'].start_with?(ex)}.count > 0
           @app.call(env)
         elsif missing_auth_header?(env)
           return_error('Missing Authorization header')

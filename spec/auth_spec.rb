@@ -241,4 +241,18 @@ describe Rack::JWT::Auth do
     end
   end
 
+  context 'when exclude option is passed' do
+    let(:app) do
+      main_app = lambda { |env| [200, env, [body.to_json]] }
+      Rack::JWT::Auth.new(main_app, { secret: secret, :exclude => ['/static'] })
+    end
+
+    before { get "/static/sub/route", {}, {} }
+
+    subject { JSON.parse(last_response.body) }
+
+    it 'returns 200 status code' do
+      expect(last_response.status).to eq(200)
+    end
+  end
 end
