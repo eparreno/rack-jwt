@@ -3,6 +3,11 @@ require 'jwt'
 module Rack
   module JWT
     class Auth
+
+      # The Authorization: Bearer token format per RFC6750
+      # http://tools.ietf.org/html/rfc6750#section-2.1
+      TOKEN_REGEX = /\ABearer ([a-zA-Z0-9\-\_\~\+\\]+\.[a-zA-Z0-9\-\_\~\+\\]+\.[a-zA-Z0-9\-\_\~\+\\]+)\z/
+
       def initialize(app, opts = {})
         @app      = app
         @jwt_secret   = opts.fetch(:secret)
@@ -24,7 +29,9 @@ module Rack
       def check_jwt_token(env)
         if valid_header?(env)
           begin
-            token = env['HTTP_AUTHORIZATION'].split(' ')[-1]
+            # extract the pure token from the Authorization: Bearer header
+            # with a regex capture group.
+            token = TOKEN_REGEX.match(env['HTTP_AUTHORIZATION'])[1]
             decoded_token = Token.decode(token, @jwt_secret, @jwt_verify, @jwt_options)
             env['jwt.header']  = decoded_token.last unless decoded_token.nil?
             env['jwt.payload'] = decoded_token.first unless decoded_token.nil?
@@ -46,7 +53,7 @@ module Rack
       end
 
       def valid_header?(env)
-        env['HTTP_AUTHORIZATION'] =~ /\ABearer \S*\.\S*\.\S*\z/
+        env['HTTP_AUTHORIZATION'] =~ TOKEN_REGEX
       end
 
       def return_error(message)
