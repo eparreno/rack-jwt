@@ -9,11 +9,11 @@ module Rack
       TOKEN_REGEX = /\ABearer ([a-zA-Z0-9\-\_\~\+\\]+\.[a-zA-Z0-9\-\_\~\+\\]+\.[a-zA-Z0-9\-\_\~\+\\]+)\z/
 
       def initialize(app, opts = {})
-        @app      = app
+        @app          = app
         @jwt_secret   = opts.fetch(:secret)
         @jwt_verify   = opts.fetch(:verify, true)
         @jwt_options  = opts.fetch(:options, {})
-        @exclude  = opts.fetch(:exclude, [])
+        @exclude      = opts.fetch(:exclude, [])
       end
 
       def call(env)
@@ -59,7 +59,7 @@ module Rack
       def return_error(message)
         body    = { error: message }.to_json
         headers = { 'Content-Type' => 'application/json',
-                    'Content-Length' => body.bytesize.to_s }
+                 'Content-Length' => body.bytesize.to_s }
 
         [401, headers, [body]]
       end
