@@ -33,11 +33,40 @@ module Rack
             # with a regex capture group.
             token = TOKEN_REGEX.match(env['HTTP_AUTHORIZATION'])[1]
             decoded_token = Token.decode(token, @jwt_secret, @jwt_verify, @jwt_options)
-            env['jwt.header']  = decoded_token.last unless decoded_token.nil?
-            env['jwt.payload'] = decoded_token.first unless decoded_token.nil?
-            @app.call(env)
+
+            # Example Array:
+            # [
+            #   {"data"=>"test"}, # payload
+            #   {"typ"=>"JWT", "alg"=>"HS256"} # header
+            # ]
+            if decoded_token.is_a?(Array) && decoded_token.size == 2
+              env['jwt.payload'] = decoded_token.first
+              env['jwt.header'] = decoded_token.last
+              @app.call(env)
+            else
+              return_error('Invalid JWT token : Unexpected Decode Error')
+            end
+
+          rescue ::JWT::VerificationError
+            return_error('Invalid JWT token : Signature Verification Error')
+          rescue ::JWT::ExpiredSignature
+            return_error('Invalid JWT token : Expired Signature (exp)')
+          rescue ::JWT::IncorrectAlgorithm
+            return_error('Invalid JWT token : Incorrect Key Algorithm')
+          rescue ::JWT::ImmatureSignature
+            return_error('Invalid JWT token : Immature Signature (nbf)')
+          rescue ::JWT::InvalidIssuerError
+            return_error('Invalid JWT token : Invalid Issuer (iss)')
+          rescue ::JWT::InvalidIatError
+            return_error('Invalid JWT token : Invalid Issued At (iat)')
+          rescue ::JWT::InvalidAudError
+            return_error('Invalid JWT token : Invalid Audience (aud)')
+          rescue ::JWT::InvalidSubError
+            return_error('Invalid JWT token : Invalid Subject (sub)')
+          rescue ::JWT::InvalidJtiError
+            return_error('Invalid JWT token : Invalid JWT ID (jti)')
           rescue ::JWT::DecodeError
-            return_error('Invalid JWT token')
+            return_error('Invalid JWT token : Decode Error')
           end
         else
           return_jwt_header_error(env)

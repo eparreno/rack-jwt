@@ -90,7 +90,7 @@ describe Rack::JWT::Auth do
     end
 
     it 'returns an error message' do
-      expect(subject['error']).to eq('Invalid JWT token')
+      expect(subject['error']).to eq('Invalid JWT token : Signature Verification Error')
     end
   end
 
@@ -203,7 +203,7 @@ describe Rack::JWT::Auth do
     end
 
     it 'returns an error message' do
-      expect(subject['error']).to eq('Invalid JWT token')
+      expect(subject['error']).to eq('Invalid JWT token : Invalid Issued At (iat)')
     end
   end
 
