@@ -55,7 +55,7 @@ Rails.application.config.middleware.use, Rack::JWT::Auth, secret: Rails.applicat
 ```
 
 ## Generating tokens
-You can generate JSON Wen Tokens for your users using the `Token#encode` method
+You can generate JSON Web Tokens for your users using the `Token#encode` method
 
 ```
 Rack::JWT::Token.encode(payload, secret)
