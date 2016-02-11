@@ -241,7 +241,37 @@ describe Rack::JWT::Auth do
     end
   end
 
-  context 'when exclude option is passed' do
+  context 'succeeds when retrieving the exact path of an excluded path and no token' do
+    let(:app) do
+      main_app = lambda { |env| [200, env, [body.to_json]] }
+      Rack::JWT::Auth.new(main_app, { secret: secret, :exclude => ['/static'] })
+    end
+
+    before { get "/static", {}, {} }
+
+    subject { JSON.parse(last_response.body) }
+
+    it 'returns 200 status code' do
+      expect(last_response.status).to eq(200)
+    end
+  end
+
+  context 'succeeds when retrieving the exact path with trailing slash of an excluded path and no token' do
+    let(:app) do
+      main_app = lambda { |env| [200, env, [body.to_json]] }
+      Rack::JWT::Auth.new(main_app, { secret: secret, :exclude => ['/static'] })
+    end
+
+    before { get "/static/", {}, {} }
+
+    subject { JSON.parse(last_response.body) }
+
+    it 'returns 200 status code' do
+      expect(last_response.status).to eq(200)
+    end
+  end
+
+  context 'succeeds when retrieving the sub-path of an excluded path and no token' do
     let(:app) do
       main_app = lambda { |env| [200, env, [body.to_json]] }
       Rack::JWT::Auth.new(main_app, { secret: secret, :exclude => ['/static'] })
@@ -255,4 +285,35 @@ describe Rack::JWT::Auth do
       expect(last_response.status).to eq(200)
     end
   end
+
+  context 'succeeds when retrieving the sub-path of an excluded path with more than one excluded path and no token' do
+    let(:app) do
+      main_app = lambda { |env| [200, env, [body.to_json]] }
+      Rack::JWT::Auth.new(main_app, { secret: secret, :exclude => ['/docs', '/books', '/static'] })
+    end
+
+    before { get "/static/sub/route", {}, {} }
+
+    subject { JSON.parse(last_response.body) }
+
+    it 'returns 200 status code' do
+      expect(last_response.status).to eq(200)
+    end
+  end
+
+  context 'fails when retrieving a non-excluded path and no token' do
+    let(:app) do
+      main_app = lambda { |env| [200, env, [body.to_json]] }
+      Rack::JWT::Auth.new(main_app, { secret: secret, :exclude => ['/docs', '/books', '/static'] })
+    end
+
+    before { get "/other/stuff", {}, {} }
+
+    subject { JSON.parse(last_response.body) }
+
+    it 'returns 401 status code' do
+      expect(last_response.status).to eq(401)
+    end
+  end
+
 end

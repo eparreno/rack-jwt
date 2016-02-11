@@ -33,7 +33,7 @@ Or install it yourself as:
 * `secret` : required : String : A cryptographically secure String that serves as the HMAC SHA-256 secret for the JSON Web Token.
 * `verify` : optional : Boolean : Determines whether JWT will verify tokens when decoded. Default is `true`.
 * `options` : optional : Hash : A hash of options that are passed through to JWT to configure supported claims. See [the ruby-jwt docs](https://github.com/progrium/ruby-jwt#support-for-reserved-claim-names) for the available options. By default only expiration (exp) and Not Before (nbf) claims are verified.
-* `exclude` : optional : Array : An Array of path strings representing paths that should not check for JWT authentication tokens before allowing access.
+* `exclude` : optional : Array : An Array of path strings representing paths that should not be checked for JWT tokens. Excludes sub-paths as well (e.g. /docs excludes /docs/some/thing.html).
 
 
 ### Sinatra

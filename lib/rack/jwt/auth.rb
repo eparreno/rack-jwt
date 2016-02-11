@@ -17,7 +17,7 @@ module Rack
       end
 
       def call(env)
-        if @exclude.select {|ex| env['PATH_INFO'].start_with?(ex)}.count > 0
+        if path_matches_excluded_path?(env)
           @app.call(env)
         elsif missing_auth_header?(env)
           return_error('Missing Authorization header')
@@ -61,6 +61,10 @@ module Rack
         rescue ::JWT::DecodeError
           return_error('Invalid JWT token : Decode Error')
         end
+      end
+
+      def path_matches_excluded_path?(env)
+        @exclude.any? {|ex| env['PATH_INFO'].start_with?(ex)}
       end
 
       def valid_auth_header?(env)
