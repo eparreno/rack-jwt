@@ -22,7 +22,8 @@ describe Rack::JWT::Auth do
     let(:headers) { {} }
 
     it 'raises an exception' do
-      expect{ Rack::JWT::Auth.new(main_app, {}) }.to raise_error
+      main_app = lambda { |env| [200, env, [body.to_json]] }
+      expect{ Rack::JWT::Auth.new(main_app, {}) }.to raise_error(KeyError)
     end
   end
 
