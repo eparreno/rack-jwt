@@ -153,6 +153,226 @@ describe Rack::JWT::Auth do
     end
   end
 
+  context 'Returns proper error response for JWT::VerificationError' do
+    let(:token) { issuer.encode({ iss: 1 }, secret) }
+    let(:headers) {{ 'HTTP_AUTHORIZATION' => "Bearer #{token}" }}
+
+    let(:app) do
+      main_app = lambda { |env| raise ::JWT::VerificationError }
+      Rack::JWT::Auth.new(main_app, { secret: secret })
+    end
+
+    before { perform_request }
+
+    subject { JSON.parse(last_response.body) }
+
+    it 'returns 401 status code' do
+      expect(last_response.status).to eq(401)
+    end
+
+    it 'returns an error message' do
+      expect(subject['error']).to eq('Invalid JWT token : Signature Verification Error')
+    end
+  end
+
+  context 'Returns proper error response for JWT::ExpiredSignature' do
+    let(:token) { issuer.encode({ iss: 1 }, secret) }
+    let(:headers) {{ 'HTTP_AUTHORIZATION' => "Bearer #{token}" }}
+
+    let(:app) do
+      main_app = lambda { |env| raise ::JWT::ExpiredSignature }
+      Rack::JWT::Auth.new(main_app, { secret: secret })
+    end
+
+    before { perform_request }
+
+    subject { JSON.parse(last_response.body) }
+
+    it 'returns 401 status code' do
+      expect(last_response.status).to eq(401)
+    end
+
+    it 'returns an error message' do
+      expect(subject['error']).to eq('Invalid JWT token : Expired Signature (exp)')
+    end
+  end
+
+  context 'Returns proper error response for JWT::IncorrectAlgorithm' do
+    let(:token) { issuer.encode({ iss: 1 }, secret) }
+    let(:headers) {{ 'HTTP_AUTHORIZATION' => "Bearer #{token}" }}
+
+    let(:app) do
+      main_app = lambda { |env| raise ::JWT::IncorrectAlgorithm }
+      Rack::JWT::Auth.new(main_app, { secret: secret })
+    end
+
+    before { perform_request }
+
+    subject { JSON.parse(last_response.body) }
+
+    it 'returns 401 status code' do
+      expect(last_response.status).to eq(401)
+    end
+
+    it 'returns an error message' do
+      expect(subject['error']).to eq('Invalid JWT token : Incorrect Key Algorithm')
+    end
+  end
+
+  context 'Returns proper error response for JWT::ImmatureSignature' do
+    let(:token) { issuer.encode({ iss: 1 }, secret) }
+    let(:headers) {{ 'HTTP_AUTHORIZATION' => "Bearer #{token}" }}
+
+    let(:app) do
+      main_app = lambda { |env| raise ::JWT::ImmatureSignature }
+      Rack::JWT::Auth.new(main_app, { secret: secret })
+    end
+
+    before { perform_request }
+
+    subject { JSON.parse(last_response.body) }
+
+    it 'returns 401 status code' do
+      expect(last_response.status).to eq(401)
+    end
+
+    it 'returns an error message' do
+      expect(subject['error']).to eq('Invalid JWT token : Immature Signature (nbf)')
+    end
+  end
+
+  context 'Returns proper error response for JWT::InvalidIssuerError' do
+    let(:token) { issuer.encode({ iss: 1 }, secret) }
+    let(:headers) {{ 'HTTP_AUTHORIZATION' => "Bearer #{token}" }}
+
+    let(:app) do
+      main_app = lambda { |env| raise ::JWT::InvalidIssuerError }
+      Rack::JWT::Auth.new(main_app, { secret: secret })
+    end
+
+    before { perform_request }
+
+    subject { JSON.parse(last_response.body) }
+
+    it 'returns 401 status code' do
+      expect(last_response.status).to eq(401)
+    end
+
+    it 'returns an error message' do
+      expect(subject['error']).to eq('Invalid JWT token : Invalid Issuer (iss)')
+    end
+  end
+
+  context 'Returns proper error response for JWT::InvalidIatError' do
+    let(:token) { issuer.encode({ iss: 1 }, secret) }
+    let(:headers) {{ 'HTTP_AUTHORIZATION' => "Bearer #{token}" }}
+
+    let(:app) do
+      main_app = lambda { |env| raise ::JWT::InvalidIatError }
+      Rack::JWT::Auth.new(main_app, { secret: secret })
+    end
+
+    before { perform_request }
+
+    subject { JSON.parse(last_response.body) }
+
+    it 'returns 401 status code' do
+      expect(last_response.status).to eq(401)
+    end
+
+    it 'returns an error message' do
+      expect(subject['error']).to eq('Invalid JWT token : Invalid Issued At (iat)')
+    end
+  end
+
+  context 'Returns proper error response for JWT::InvalidAudError' do
+    let(:token) { issuer.encode({ iss: 1 }, secret) }
+    let(:headers) {{ 'HTTP_AUTHORIZATION' => "Bearer #{token}" }}
+
+    let(:app) do
+      main_app = lambda { |env| raise ::JWT::InvalidAudError }
+      Rack::JWT::Auth.new(main_app, { secret: secret })
+    end
+
+    before { perform_request }
+
+    subject { JSON.parse(last_response.body) }
+
+    it 'returns 401 status code' do
+      expect(last_response.status).to eq(401)
+    end
+
+    it 'returns an error message' do
+      expect(subject['error']).to eq('Invalid JWT token : Invalid Audience (aud)')
+    end
+  end
+
+  context 'Returns proper error response for JWT::InvalidSubError' do
+    let(:token) { issuer.encode({ iss: 1 }, secret) }
+    let(:headers) {{ 'HTTP_AUTHORIZATION' => "Bearer #{token}" }}
+
+    let(:app) do
+      main_app = lambda { |env| raise ::JWT::InvalidSubError }
+      Rack::JWT::Auth.new(main_app, { secret: secret })
+    end
+
+    before { perform_request }
+
+    subject { JSON.parse(last_response.body) }
+
+    it 'returns 401 status code' do
+      expect(last_response.status).to eq(401)
+    end
+
+    it 'returns an error message' do
+      expect(subject['error']).to eq('Invalid JWT token : Invalid Subject (sub)')
+    end
+  end
+
+  context 'Returns proper error response for JWT::InvalidJtiError' do
+    let(:token) { issuer.encode({ iss: 1 }, secret) }
+    let(:headers) {{ 'HTTP_AUTHORIZATION' => "Bearer #{token}" }}
+
+    let(:app) do
+      main_app = lambda { |env| raise ::JWT::InvalidJtiError }
+      Rack::JWT::Auth.new(main_app, { secret: secret })
+    end
+
+    before { perform_request }
+
+    subject { JSON.parse(last_response.body) }
+
+    it 'returns 401 status code' do
+      expect(last_response.status).to eq(401)
+    end
+
+    it 'returns an error message' do
+      expect(subject['error']).to eq('Invalid JWT token : Invalid JWT ID (jti)')
+    end
+  end
+
+  context 'Returns proper error response for JWT::DecodeError' do
+    let(:token) { issuer.encode({ iss: 1 }, secret) }
+    let(:headers) {{ 'HTTP_AUTHORIZATION' => "Bearer #{token}" }}
+
+    let(:app) do
+      main_app = lambda { |env| raise ::JWT::DecodeError }
+      Rack::JWT::Auth.new(main_app, { secret: secret })
+    end
+
+    before { perform_request }
+
+    subject { JSON.parse(last_response.body) }
+
+    it 'returns 401 status code' do
+      expect(last_response.status).to eq(401)
+    end
+
+    it 'returns an error message' do
+      expect(subject['error']).to eq('Invalid JWT token : Decode Error')
+    end
+  end
+
   # Test the pass-through of the options Hash to JWT using Issued At (iat) claim to test..
   ###
 
