@@ -1,22 +1,23 @@
-# coding: utf-8
+# encoding: UTF-8
+
 lib = File.expand_path('../lib', __FILE__)
 $LOAD_PATH.unshift(lib) unless $LOAD_PATH.include?(lib)
 require 'rack/jwt/version'
 
 Gem::Specification.new do |spec|
-  spec.name          = "rack-jwt"
+  spec.name          = 'rack-jwt'
   spec.version       = Rack::JWT::VERSION
-  spec.authors       = ["Mr. Eigenbart"]
-  spec.email         = ["eigenbart@gmail.com"]
+  spec.authors       = ['Mr. Eigenbart']
+  spec.email         = ['eigenbart@gmail.com']
   spec.summary       = %q{Rack middleware that provides authentication based on JSON Web Tokens.}
   spec.description   = %q{Rack middleware that provides authentication based on JSON Web Tokens.}
-  spec.homepage      = ""
-  spec.license       = "MIT"
+  spec.homepage      = 'https://github.com/eigenbart/rack-jwt'
+  spec.license       = 'MIT'
 
-  spec.files         = `git ls-files -z`.split("\x0")
-  spec.executables   = spec.files.grep(%r{^bin/}) { |f| File.basename(f) }
-  spec.test_files    = spec.files.grep(%r{^(test|spec|features)/})
-  spec.require_paths = ["lib"]
+  spec.files         = Dir.glob('lib/**/*') + %w(LICENSE.txt README.md)
+  spec.test_files    = spec.files.grep(%r{^spec/})
+  spec.require_paths = ['lib']
+  spec.platform      = Gem::Platform::RUBY
   spec.required_ruby_version = '>= 2.1.0'
 
   spec.add_development_dependency 'bundler',   '~> 1.10'
