@@ -30,10 +30,10 @@ Or install it yourself as:
 
 `Rack::JWT::Auth` accepts several configuration options:
 
-* `secret` : required : String : A cryptographically secure String that serves as the HMAC SHA-256 secret for the JSON Web Token.
-* `verify` : optional : Boolean : Determines whether JWT will verify tokens when decoded. Default is `true`.
-* `options` : optional : Hash : A hash of options that are passed through to JWT to configure supported claims. See [the ruby-jwt docs](https://github.com/progrium/ruby-jwt#support-for-reserved-claim-names) for the available options. By default only expiration (exp) and Not Before (nbf) claims are verified.
-* `exclude` : optional : Array : An Array of path strings representing paths that should not be checked for JWT tokens. Excludes sub-paths as well (e.g. /docs excludes /docs/some/thing.html).
+* `secret` : required : String || OpenSSL::PKey::RSA || OpenSSL::PKey::EC : A cryptographically secure String (for HMAC algorithms) or a public key object of an appropriate type. Pass in `nil` if you are using the `'none'` algorithm.
+* `verify` : optional : Boolean : Determines whether JWT will verify tokens when decoded. Default is `true`. Pass in `false` if you are using the `'none'` algorithm.
+* `options` : optional : Hash : A hash of options that are passed through to JWT to configure supported claims. See [the ruby-jwt docs](https://github.com/progrium/ruby-jwt#support-for-reserved-claim-names) for the available options. By default only expiration (exp) and Not Before (nbf) claims are verified. Pass in an algorithm choice like `{ algorithm: 'HS256'}`
+* `exclude` : optional : Array : An Array of path strings representing paths that should not be checked for JWT tokens. Excludes sub-paths as well (e.g. `/docs` excludes `/docs/some/thing.html`). Each path should start with a `/`.
 
 
 ### Sinatra
@@ -55,11 +55,32 @@ Rails.application.config.middleware.use, Rack::JWT::Auth, secret: Rails.applicat
 ```
 
 ## Generating tokens
-You can generate JSON Web Tokens for your users using the `Token#encode` method
+You can generate JSON Web Tokens for your users using the
+`Rack::JWT::Token#encode` method which takes `payload`,
+`secret`, and `algorithm` params.
+
+The secret will be either a cryptographically strong random string, or the
+secret key component of a public/private keypair of an accepted type depending on
+the algorithm you choose. You can see examples of using the various key types at
+the [ruby-jwt gem repo](https://github.com/jwt/ruby-jwt/blob/master/README.md)
+
+The `algorithm` is an optional String and can be one of the following (default HMAC 'HS256'):
 
 ```
-Rack::JWT::Token.encode(payload, secret)
+['none', 'HS256', 'HS384', 'HS512', 'RS256', 'RS384', 'RS512', 'ES256', 'ES384', 'ES512']
 ```
+
+Usage example:
+
+```
+payload = { "foo" => "bar" }
+secret  = "my-long-random-secret or a Private Key object"
+alg     = 'HS256'
+
+Rack::JWT::Token.encode(payload, secret, alg)
+```
+
+It is important to note that the middleware must be configured to match your token's secret and algorithm or the signature verification will not work.
 
 ## Contributing
 
