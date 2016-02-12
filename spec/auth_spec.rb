@@ -27,6 +27,16 @@ describe Rack::JWT::Auth do
     end
   end
 
+  context 'when invalid algorithm provided' do
+    let(:headers) { {} }
+
+    it 'raises an exception' do
+      main_app = ->(env) { [200, env, [body.to_json]] }
+      args = { secret: secret, verify: true, options: {algorithm: 'badalg'} }
+      expect { Rack::JWT::Auth.new(main_app, args) }.to raise_error(RuntimeError)
+    end
+  end
+
   context 'when no authorization header provided' do
     let(:headers) { {} }
 
