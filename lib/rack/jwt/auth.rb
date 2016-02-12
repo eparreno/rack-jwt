@@ -2,18 +2,22 @@ require 'jwt'
 
 module Rack
   module JWT
+    # Authentication middleware
     class Auth
+      SUPPORTED_ALGORITHMS = %w(none HS256 HS384 HS512 RS256 RS384 RS512 ES256 ES384 ES512).freeze
 
-      SUPPORTED_ALGORITHMS = ['none', 'HS256', 'HS384', 'HS512', 'RS256', 'RS384', 'RS512', 'ES256', 'ES384', 'ES512']
-
-      # The Authorization: Bearer token format per RFC6750
-      # http://tools.ietf.org/html/rfc6750#section-2.1
-      #
       # The last segment gets dropped for 'none' algorithm since there is no
-      # signature so both of these patterns are valid.
+      # signature so both of these patterns are valid. All character chunks
+      # are base64url format and periods.
       #   Bearer abc123.abc123.abc123
       #   Bearer abc123.abc123.
-      BEARER_TOKEN_REGEX = /\ABearer ([a-zA-Z0-9\-\_\~\+\\]+\.[a-zA-Z0-9\-\_\~\+\\]+\.[a-zA-Z0-9\-\_\~\+\\]*)\z/
+      BEARER_TOKEN_REGEX = %r{
+        ^Bearer\s{1}(       # starts with Bearer and a single space
+        [a-zA-Z0-9\-\_]+\.  # 1 or more chars followed by a single period
+        [a-zA-Z0-9\-\_]+\.  # 1 or more chars followed by a single period
+        [a-zA-Z0-9\-\_]*    # 0 or more chars, no trailing chars
+        )$
+      }x
 
       def initialize(app, opts = {})
         @app          = app
@@ -22,13 +26,10 @@ module Rack
         @jwt_options  = opts.fetch(:options, {})
         @exclude      = opts.fetch(:exclude, [])
 
-        # default to 'HS256' if algorithm is not specified
-        if @jwt_options[:algorithm].nil?
-          @jwt_options.merge!({ algorithm: 'HS256' })
-        end
+        @jwt_options[:algorithm] = 'HS256' if @jwt_options[:algorithm].nil?
 
         unless SUPPORTED_ALGORITHMS.include?(@jwt_options[:algorithm])
-          raise "Unsupported algorithm"
+          raise 'Unsupported algorithm'
         end
       end
 
@@ -80,7 +81,7 @@ module Rack
       end
 
       def path_matches_excluded_path?(env)
-        @exclude.any? {|ex| env['PATH_INFO'].start_with?(ex)}
+        @exclude.any? { |ex| env['PATH_INFO'].start_with?(ex) }
       end
 
       def valid_auth_header?(env)
@@ -97,8 +98,7 @@ module Rack
 
       def return_error(message)
         body    = { error: message }.to_json
-        headers = { 'Content-Type' => 'application/json',
-          'Content-Length' => body.bytesize.to_s }
+        headers = { 'Content-Type' => 'application/json', 'Content-Length' => body.bytesize.to_s }
 
         [401, headers, [body]]
       end

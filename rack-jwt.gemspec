@@ -9,8 +9,8 @@ Gem::Specification.new do |spec|
   spec.version       = Rack::JWT::VERSION
   spec.authors       = ['Mr. Eigenbart']
   spec.email         = ['eigenbart@gmail.com']
-  spec.summary       = %q{Rack middleware that provides authentication based on JSON Web Tokens.}
-  spec.description   = %q{Rack middleware that provides authentication based on JSON Web Tokens.}
+  spec.summary       = 'Rack middleware that provides authentication based on JSON Web Tokens.'
+  spec.description   = 'Rack middleware that provides authentication based on JSON Web Tokens.'
   spec.homepage      = 'https://github.com/eigenbart/rack-jwt'
   spec.license       = 'MIT'
 

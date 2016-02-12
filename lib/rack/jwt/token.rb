@@ -1,82 +1,67 @@
 module Rack
   module JWT
+    # Token encoding and decoding
     class Token
-
       # abc123.abc123.abc123    (w/ signature)
       # abc123.abc123.          ('none')
       TOKEN_REGEX = /\A([a-zA-Z0-9\-\_\~\+\\]+\.[a-zA-Z0-9\-\_\~\+\\]+\.[a-zA-Z0-9\-\_\~\+\\]*)\z/
 
       def self.encode(payload, secret, alg = 'HS256')
+        raise 'Invalid payload. Must be a Hash.' unless payload.is_a?(Hash)
+        raise 'Invalid secret type.'             unless secret_of_valid_type?(secret)
+        raise 'Unsupported algorithm'            unless algorithm_supported?(alg)
 
-        unless payload.is_a?(Hash)
-          raise "Invalid payload. Must be a Hash."
-        end
-
-        unless secret.nil? ||
-             secret.is_a?(String) ||
-             secret.is_a?(OpenSSL::PKey::RSA) ||
-             secret.is_a?(OpenSSL::PKey::EC)
-          raise "Invalid secret. Must be a nil, String, OpenSSL::PKey::RSA, or OpenSSL::PKey::EC"
-        end
-
-        unless alg.is_a?(String)
-          raise "Invalid algorithm. Must be a String."
-        end
-
-        unless Rack::JWT::Auth::SUPPORTED_ALGORITHMS.include?(alg)
-          raise "Unsupported algorithm"
-        end
-
-        # if using an unsigned token ('none') you *must* set the `secret`
+        # if using an unsigned token ('none' alg) you *must* set the `secret`
         # to `nil` in which case any user provided `secret` will be ignored.
         if alg == 'none'
-          secret = nil
+          ::JWT.encode(payload, nil, alg)
+        else
+          ::JWT.encode(payload, secret, alg)
         end
-
-        ::JWT.encode(payload, secret, alg)
       end
 
       def self.decode(token, secret, verify, options = {})
+        raise 'Invalid token format.'     unless valid_token_format?(token)
+        raise 'Invalid secret type.'      unless secret_of_valid_type?(secret)
+        raise 'Unsupported verify value.' unless verify_of_valid_type?(verify)
+        options[:algorithm] = 'HS256'     if options[:algorithm].nil?
+        raise 'Unsupported algorithm'     unless algorithm_supported?(options[:algorithm])
 
-        # the token passed in must look valid
-        unless token =~ TOKEN_REGEX
-          raise "Invalid token format"
-        end
-
-        unless secret.nil? ||
-             secret.is_a?(String) ||
-             secret.is_a?(OpenSSL::PKey::RSA) ||
-             secret.is_a?(OpenSSL::PKey::EC)
-          raise "Invalid secret. Must be a nil, String, OpenSSL::PKey::RSA, or OpenSSL::PKey::EC"
-        end
-
-        # ensure verify is an actual `nil` or `false` intentionally,
-        # otherwise set it to the sane default of `true` which is almost
-        # always correct.
-        unless verify.nil? || verify.is_a?(FalseClass)
-          verify = true
-        end
-
-        # set a sane default algorithm if none was set
-        if options[:algorithm].nil?
-          options.merge!({ algorithm: 'HS256' })
-        end
-
-        # if using an unsigned 'none' algorithm token you *must* set the
+        # If using an unsigned 'none' algorithm token you *must* set the
         # `secret` to `nil` and `verify` to `false` or it won't work per
         # the ruby-jwt docs. Using 'none' is probably not recommended.
         if options[:algorithm] == 'none'
-          secret = nil
-          verify = false
+          ::JWT.decode(token, nil, false, options)
+        else
+          ::JWT.decode(token, secret, verify, options)
         end
-
-        unless Rack::JWT::Auth::SUPPORTED_ALGORITHMS.include?(options[:algorithm])
-          raise "Unsupported algorithm"
-        end
-
-        ::JWT.decode(token, secret, verify, options)
       end
 
+      # Private Utility Class Methods
+      # See : https://gist.github.com/Integralist/bb8760d11a03c88da151
+
+      def self.valid_token_format?(token)
+        token =~ TOKEN_REGEX
+      end
+      private_class_method :valid_token_format?
+
+      def self.algorithm_supported?(alg)
+        Rack::JWT::Auth::SUPPORTED_ALGORITHMS.include?(alg)
+      end
+      private_class_method :algorithm_supported?
+
+      def self.verify_of_valid_type?(verify)
+        verify.nil? || verify.is_a?(FalseClass) || verify.is_a?(TrueClass)
+      end
+      private_class_method :verify_of_valid_type?
+
+      def self.secret_of_valid_type?(secret)
+        secret.nil? ||
+          secret.is_a?(String) ||
+          secret.is_a?(OpenSSL::PKey::RSA) ||
+          secret.is_a?(OpenSSL::PKey::EC)
+      end
+      private_class_method :secret_of_valid_type?
     end
   end
 end
