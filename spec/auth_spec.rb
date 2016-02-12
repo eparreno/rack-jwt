@@ -4,7 +4,7 @@ describe Rack::JWT::Auth do
   include Rack::Test::Methods
 
   let(:issuer)  { Rack::JWT::Token }
-  let(:secret)  { 'foo' }
+  let(:secret)  { 'secret' } # use 'secret to match hardcoded 'secret' @ http://jwt.io'
   let(:verify)  { true }
   let(:options) { {} }
   let(:body)    {{ 'foo' => 'bar' }}
@@ -130,6 +130,37 @@ describe Rack::JWT::Auth do
     it 'adds the token payload to the request' do
       payload = last_response.header['jwt.payload']
       expect(payload['iss']).to eq(1)
+    end
+
+    it 'adds the token header to the request' do
+      header = last_response.header['jwt.header']
+      expect(header['alg']).to eq('HS256')
+      expect(header['typ']).to eq('JWT')
+    end
+  end
+
+  context 'when HS256 token is valid and issued by jwt.io (test vector)' do
+    # token was created with hard-coded secret of 'secret' on the http://jwt.io website
+    let(:token) { "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWV9.TJVA95OrM7E2cBab30RMHrHDcEfxjoYZgeFONFh7HgQ" }
+    let(:headers) {{ 'HTTP_AUTHORIZATION' => "Bearer #{token}" }}
+
+    subject { JSON.parse(last_response.body) }
+
+    before { perform_request }
+
+    it 'returns 200 status code' do
+      expect(last_response.status).to eq(200)
+    end
+
+    it 'process the request' do
+      expect(subject).to eq(body)
+    end
+
+    it 'adds the token payload to the request' do
+      payload = last_response.header['jwt.payload']
+      expect(payload['sub']).to eq("1234567890")
+      expect(payload['name']).to eq("John Doe")
+      expect(payload['admin']).to eq(true)
     end
 
     it 'adds the token header to the request' do

@@ -4,9 +4,16 @@ module Rack
   module JWT
     class Auth
 
+      SUPPORTED_ALGORITHMS = ['none', 'HS256', 'HS384', 'HS512', 'RS256', 'RS384', 'RS512', 'ES256', 'ES384', 'ES512']
+
       # The Authorization: Bearer token format per RFC6750
       # http://tools.ietf.org/html/rfc6750#section-2.1
-      TOKEN_REGEX = /\ABearer ([a-zA-Z0-9\-\_\~\+\\]+\.[a-zA-Z0-9\-\_\~\+\\]+\.[a-zA-Z0-9\-\_\~\+\\]+)\z/
+      #
+      # The last segment gets dropped for 'none' algorithm since there is no
+      # signature so both of these patterns are valid.
+      #   Bearer abc123.abc123.abc123
+      #   Bearer abc123.abc123.
+      BEARER_TOKEN_REGEX = /\ABearer ([a-zA-Z0-9\-\_\~\+\\]+\.[a-zA-Z0-9\-\_\~\+\\]+\.[a-zA-Z0-9\-\_\~\+\\]*)\z/
 
       def initialize(app, opts = {})
         @app          = app
@@ -14,6 +21,15 @@ module Rack
         @jwt_verify   = opts.fetch(:verify, true)
         @jwt_options  = opts.fetch(:options, {})
         @exclude      = opts.fetch(:exclude, [])
+
+        # default to 'HS256' if algorithm is not specified
+        if @jwt_options[:algorithm].nil?
+          @jwt_options.merge!({ algorithm: 'HS256' })
+        end
+
+        unless SUPPORTED_ALGORITHMS.include?(@jwt_options[:algorithm])
+          raise "Unsupported algorithm"
+        end
       end
 
       def call(env)
@@ -33,7 +49,7 @@ module Rack
       def verify_token(env)
         # extract the token from the Authorization: Bearer header
         # with a regex capture group.
-        token = TOKEN_REGEX.match(env['HTTP_AUTHORIZATION'])[1]
+        token = BEARER_TOKEN_REGEX.match(env['HTTP_AUTHORIZATION'])[1]
 
         begin
           decoded_token = Token.decode(token, @jwt_secret, @jwt_verify, @jwt_options)
@@ -68,7 +84,7 @@ module Rack
       end
 
       def valid_auth_header?(env)
-        env['HTTP_AUTHORIZATION'] =~ TOKEN_REGEX
+        env['HTTP_AUTHORIZATION'] =~ BEARER_TOKEN_REGEX
       end
 
       def invalid_auth_header?(env)
