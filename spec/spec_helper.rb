@@ -1,5 +1,5 @@
 require 'simplecov'
 SimpleCov.start
 
-require "rack/test"
-require "rack/jwt"
+require 'rack/test'
+require 'rack/jwt'
