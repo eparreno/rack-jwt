@@ -20,7 +20,7 @@ Gem::Specification.new do |spec|
   spec.platform      = Gem::Platform::RUBY
   spec.required_ruby_version = '>= 2.1.0'
 
-  spec.add_development_dependency 'bundler',   '~> 1.10'
+  spec.add_development_dependency 'bundler',   '~> 1.6'
   spec.add_development_dependency 'rake',      '~> 10.5'
   spec.add_development_dependency 'rack-test', '~> 0.6.3'
   spec.add_development_dependency 'rspec',     '~> 3.4.0'
