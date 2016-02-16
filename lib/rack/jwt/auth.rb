@@ -4,7 +4,13 @@ module Rack
   module JWT
     # Authentication middleware
     class Auth
+      attr_reader :secret
+      attr_reader :verify
+      attr_reader :options
+      attr_reader :exclude
+
       SUPPORTED_ALGORITHMS = %w(none HS256 HS384 HS512 RS256 RS384 RS512 ES256 ES384 ES512).freeze
+      DEFAULT_ALGORITHM = 'HS256'.freeze
 
       # The last segment gets dropped for 'none' algorithm since there is no
       # signature so both of these patterns are valid. All character chunks
@@ -19,18 +25,25 @@ module Rack
         )$
       }x
 
+      # Initialization should fail fast with an ArgumentError
+      # if any args are invalid.
       def initialize(app, opts = {})
-        @app          = app
-        @jwt_secret   = opts.fetch(:secret)
-        @jwt_verify   = opts.fetch(:verify, true)
-        @jwt_options  = opts.fetch(:options, {})
-        @exclude      = opts.fetch(:exclude, [])
+        @app     = app
+        @secret  = opts.fetch(:secret, nil)
+        @verify  = opts.fetch(:verify, true)
+        @options = opts.fetch(:options, {})
+        @exclude = opts.fetch(:exclude, [])
 
-        @jwt_options[:algorithm] = 'HS256' if @jwt_options[:algorithm].nil?
+        @secret  = @secret.strip if @secret.is_a?(String)
+        @options[:algorithm] = DEFAULT_ALGORITHM if @options[:algorithm].nil?
 
-        unless SUPPORTED_ALGORITHMS.include?(@jwt_options[:algorithm])
-          raise 'Unsupported algorithm'
-        end
+        check_secret_type!
+        check_secret!
+        check_secret_and_verify_for_none_alg!
+        check_verify_type!
+        check_options_type!
+        check_valid_algorithm!
+        check_exclude_type!
       end
 
       def call(env)
@@ -53,7 +66,7 @@ module Rack
         token = BEARER_TOKEN_REGEX.match(env['HTTP_AUTHORIZATION'])[1]
 
         begin
-          decoded_token = Token.decode(token, @jwt_secret, @jwt_verify, @jwt_options)
+          decoded_token = Token.decode(token, @secret, @verify, @options)
           env['jwt.payload'] = decoded_token.first
           env['jwt.header'] = decoded_token.last
           @app.call(env)
@@ -77,6 +90,69 @@ module Rack
           return_error('Invalid JWT token : Invalid JWT ID (jti)')
         rescue ::JWT::DecodeError
           return_error('Invalid JWT token : Decode Error')
+        end
+      end
+
+      def check_secret_type!
+        unless @secret.nil? ||
+               @secret.is_a?(String) ||
+               @secret.is_a?(OpenSSL::PKey::RSA) ||
+               @secret.is_a?(OpenSSL::PKey::EC)
+          raise ArgumentError, 'secret argument must be a valid type'
+        end
+      end
+
+      def check_secret!
+        if @secret.nil? || (@secret.is_a?(String) && @secret.empty?)
+          unless @options[:algorithm] == 'none'
+            raise ArgumentError, 'secret argument can only be nil/empty for the "none" algorithm'
+          end
+        end
+      end
+
+      def check_secret_and_verify_for_none_alg!
+        if @options && @options[:algorithm] && @options[:algorithm] == 'none'
+          unless @secret.nil? && @verify.is_a?(FalseClass)
+            raise ArgumentError, 'when "none" the secret must be "nil" and verify "false"'
+          end
+        end
+      end
+
+      def check_verify_type!
+        unless verify.is_a?(TrueClass) || verify.is_a?(FalseClass)
+          raise ArgumentError, 'verify argument must be true or false'
+        end
+      end
+
+      def check_options_type!
+        raise ArgumentError, 'options argument must be a Hash' unless options.is_a?(Hash)
+      end
+
+      def check_valid_algorithm!
+        unless @options &&
+               @options[:algorithm] &&
+               SUPPORTED_ALGORITHMS.include?(@options[:algorithm])
+          raise ArgumentError, 'algorithm argument must be a supported type'
+        end
+      end
+
+      def check_exclude_type!
+        unless @exclude.is_a?(Array)
+          raise ArgumentError, 'exclude argument must be an Array'
+        end
+
+        @exclude.each do |x|
+          unless x.is_a?(String)
+            raise ArgumentError, 'each exclude Array element must be a String'
+          end
+
+          if x.empty?
+            raise ArgumentError, 'each exclude Array element must not be empty'
+          end
+
+          unless x.start_with?('/')
+            raise ArgumentError, 'each exclude Array element must start with a /'
+          end
         end
       end
 

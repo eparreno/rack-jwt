@@ -1,582 +1,149 @@
 require 'spec_helper'
 
 describe Rack::JWT::Auth do
-  include Rack::Test::Methods
-
   let(:issuer)  { Rack::JWT::Token }
   let(:secret)  { 'secret' } # use 'secret to match hardcoded 'secret' @ http://jwt.io'
   let(:verify)  { true }
-  let(:options) { {} }
-  let(:body)    { { 'foo' => 'bar' } }
+  let(:payload) { { foo: 'bar' } }
+
+  let(:inner_app) do
+    ->(env) { [200, env, [payload.to_json]] }
+  end
 
   let(:app) do
-    main_app = ->(env) { [200, env, [body.to_json]] }
-    Rack::JWT::Auth.new(main_app, secret: secret)
+    Rack::JWT::Auth.new(inner_app, secret: secret)
   end
 
-  def perform_request
-    get('/', {}, headers)
-  end
-
-  context 'when no secret provided' do
-    let(:headers) { {} }
-
-    it 'raises an exception' do
-      main_app = ->(env) { [200, env, [body.to_json]] }
-      expect { Rack::JWT::Auth.new(main_app, {}) }.to raise_error(KeyError)
-    end
-  end
-
-  context 'when invalid algorithm provided' do
-    let(:headers) { {} }
-
-    it 'raises an exception' do
-      main_app = ->(env) { [200, env, [body.to_json]] }
-      args = { secret: secret, verify: true, options: {algorithm: 'badalg'} }
-      expect { Rack::JWT::Auth.new(main_app, args) }.to raise_error(RuntimeError)
-    end
-  end
-
-  context 'when no authorization header provided' do
-    let(:headers) { {} }
-
-    subject { JSON.parse(last_response.body) }
-
-    before { perform_request }
-
-    it 'returns 401 status code' do
-      expect(last_response.status).to eq(401)
-    end
-
-    it 'returns an error message' do
-      expect(subject['error']).to eq('Missing Authorization header')
-    end
-  end
-
-  context 'when authorization header does not contain the schema' do
-    let(:token) { issuer.encode({ iss: 1 }, secret) }
-    let(:headers) { { 'HTTP_AUTHORIZATION' => token } }
-
-    subject { JSON.parse(last_response.body) }
-
-    before { perform_request }
-
-    it 'returns 401 status code' do
-      expect(last_response.status).to eq(401)
-    end
-
-    it 'returns an error message' do
-      expect(subject['error']).to eq('Invalid Authorization header format')
-    end
-  end
-
-  context 'when authorization header contains an invalid schema' do
-    let(:token) { issuer.encode({ iss: 1 }, secret) }
-    let(:headers) { { 'HTTP_AUTHORIZATION' => "WrongScheme #{token}" } }
-
-    subject { JSON.parse(last_response.body) }
-
-    before { perform_request }
-
-    it 'returns 401 status code' do
-      expect(last_response.status).to eq(401)
-    end
-
-    it 'returns an error message' do
-      expect(subject['error']).to eq('Invalid Authorization header format')
-    end
-  end
-
-  context 'when token signature is invalid' do
-    let(:token) { issuer.encode({ iss: 1 }, 'invalid secret') }
-    let(:headers) { { 'HTTP_AUTHORIZATION' => "Bearer #{token}" } }
-
-    subject { JSON.parse(last_response.body) }
-
-    before { perform_request }
-
-    it 'returns 401 status code' do
-      expect(last_response.status).to eq(401)
-    end
-
-    it 'returns an error message' do
-      expect(subject['error']).to eq('Invalid JWT token : Signature Verification Error')
-    end
-  end
-
-  context 'when token signature is invalid and JWT verify option is false' do
-    let(:app) do
-      main_app = ->(env) { [200, env, [body.to_json]] }
-      Rack::JWT::Auth.new(main_app, secret: secret, verify: false)
-    end
-    let(:token) { issuer.encode({ iss: 1 }, 'invalid secret') }
-    let(:headers) { { 'HTTP_AUTHORIZATION' => "Bearer #{token}" } }
-
-    before { perform_request }
-
-    subject { JSON.parse(last_response.body) }
-
-    it 'returns 200 status code' do
-      expect(last_response.status).to eq(200)
-    end
-  end
-
-  context 'when token is valid' do
-    let(:token) { issuer.encode({ iss: 1 }, secret) }
-    let(:headers) { { 'HTTP_AUTHORIZATION' => "Bearer #{token}" } }
-
-    subject { JSON.parse(last_response.body) }
-
-    before { perform_request }
-
-    it 'returns 200 status code' do
-      expect(last_response.status).to eq(200)
-    end
-
-    it 'process the request' do
-      expect(subject).to eq(body)
-    end
-
-    it 'adds the token payload to the request' do
-      payload = last_response.header['jwt.payload']
-      expect(payload['iss']).to eq(1)
-    end
-
-    it 'adds the token header to the request' do
-      header = last_response.header['jwt.header']
-      expect(header['alg']).to eq('HS256')
-      expect(header['typ']).to eq('JWT')
-    end
-  end
-
-  context 'when HS256 token is valid and issued by jwt.io (test vector)' do
-    # token was created with hard-coded secret of 'secret' on the http://jwt.io website
-    let(:token) { 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWV9.TJVA95OrM7E2cBab30RMHrHDcEfxjoYZgeFONFh7HgQ' }
-    let(:headers) { { 'HTTP_AUTHORIZATION' => "Bearer #{token}" } }
-
-    subject { JSON.parse(last_response.body) }
-
-    before { perform_request }
-
-    it 'returns 200 status code' do
-      expect(last_response.status).to eq(200)
-    end
-
-    it 'process the request' do
-      expect(subject).to eq(body)
-    end
-
-    it 'adds the token payload to the request' do
-      payload = last_response.header['jwt.payload']
-      expect(payload['sub']).to eq('1234567890')
-      expect(payload['name']).to eq('John Doe')
-      expect(payload['admin']).to eq(true)
-    end
-
-    it 'adds the token header to the request' do
-      header = last_response.header['jwt.header']
-      expect(header['alg']).to eq('HS256')
-      expect(header['typ']).to eq('JWT')
-    end
-  end
-
-  context 'when token is valid but app raises an error unrelated to JWT' do
-    let(:token) { issuer.encode({ iss: 1 }, secret) }
-    let(:headers) { { 'HTTP_AUTHORIZATION' => "Bearer #{token}" } }
-
-    let(:app) do
-      main_app = ->(_env) { raise 'BOOM!' }
-      Rack::JWT::Auth.new(main_app, secret: secret)
-    end
-
-    it 'bubbles up the exception' do
-      expect { perform_request }.to raise_error('BOOM!')
-    end
-  end
-
-  context 'Returns proper error response for JWT::VerificationError' do
-    let(:token) { issuer.encode({ iss: 1 }, secret) }
-    let(:headers) { { 'HTTP_AUTHORIZATION' => "Bearer #{token}" } }
-
-    let(:app) do
-      main_app = ->(_env) { raise ::JWT::VerificationError }
-
-      Rack::JWT::Auth.new(main_app, secret: secret)
-    end
-
-    before { perform_request }
-
-    subject { JSON.parse(last_response.body) }
-
-    it 'returns 401 status code' do
-      expect(last_response.status).to eq(401)
-    end
-
-    it 'returns an error message' do
-      expect(subject['error']).to eq('Invalid JWT token : Signature Verification Error')
-    end
-  end
-
-  context 'Returns proper error response for JWT::ExpiredSignature' do
-    let(:token) { issuer.encode({ iss: 1 }, secret) }
-    let(:headers) { { 'HTTP_AUTHORIZATION' => "Bearer #{token}" } }
-
-    let(:app) do
-      main_app = ->(_env) { raise ::JWT::ExpiredSignature }
-      Rack::JWT::Auth.new(main_app, secret: secret)
-    end
-
-    before { perform_request }
-
-    subject { JSON.parse(last_response.body) }
-
-    it 'returns 401 status code' do
-      expect(last_response.status).to eq(401)
-    end
-
-    it 'returns an error message' do
-      expect(subject['error']).to eq('Invalid JWT token : Expired Signature (exp)')
-    end
-  end
-
-  context 'Returns proper error response for JWT::IncorrectAlgorithm' do
-    let(:token) { issuer.encode({ iss: 1 }, secret) }
-    let(:headers) { { 'HTTP_AUTHORIZATION' => "Bearer #{token}" } }
-
-    let(:app) do
-      main_app = ->(_env) { raise ::JWT::IncorrectAlgorithm }
-      Rack::JWT::Auth.new(main_app, secret: secret)
-    end
-
-    before { perform_request }
-
-    subject { JSON.parse(last_response.body) }
-
-    it 'returns 401 status code' do
-      expect(last_response.status).to eq(401)
-    end
-
-    it 'returns an error message' do
-      expect(subject['error']).to eq('Invalid JWT token : Incorrect Key Algorithm')
-    end
-  end
-
-  context 'Returns proper error response for JWT::ImmatureSignature' do
-    let(:token) { issuer.encode({ iss: 1 }, secret) }
-    let(:headers) { { 'HTTP_AUTHORIZATION' => "Bearer #{token}" } }
-
-    let(:app) do
-      main_app = ->(_env) { raise ::JWT::ImmatureSignature }
-      Rack::JWT::Auth.new(main_app, secret: secret)
-    end
-
-    before { perform_request }
-
-    subject { JSON.parse(last_response.body) }
-
-    it 'returns 401 status code' do
-      expect(last_response.status).to eq(401)
-    end
-
-    it 'returns an error message' do
-      expect(subject['error']).to eq('Invalid JWT token : Immature Signature (nbf)')
-    end
-  end
-
-  context 'Returns proper error response for JWT::InvalidIssuerError' do
-    let(:token) { issuer.encode({ iss: 1 }, secret) }
-    let(:headers) { { 'HTTP_AUTHORIZATION' => "Bearer #{token}" } }
-
-    let(:app) do
-      main_app = ->(_env) { raise ::JWT::InvalidIssuerError }
-      Rack::JWT::Auth.new(main_app, secret: secret)
-    end
-
-    before { perform_request }
-
-    subject { JSON.parse(last_response.body) }
-
-    it 'returns 401 status code' do
-      expect(last_response.status).to eq(401)
-    end
-
-    it 'returns an error message' do
-      expect(subject['error']).to eq('Invalid JWT token : Invalid Issuer (iss)')
-    end
-  end
-
-  context 'Returns proper error response for JWT::InvalidIatError' do
-    let(:token) { issuer.encode({ iss: 1 }, secret) }
-    let(:headers) { { 'HTTP_AUTHORIZATION' => "Bearer #{token}" } }
-
-    let(:app) do
-      main_app = ->(_env) { raise ::JWT::InvalidIatError }
-      Rack::JWT::Auth.new(main_app, secret: secret)
-    end
-
-    before { perform_request }
-
-    subject { JSON.parse(last_response.body) }
-
-    it 'returns 401 status code' do
-      expect(last_response.status).to eq(401)
-    end
-
-    it 'returns an error message' do
-      expect(subject['error']).to eq('Invalid JWT token : Invalid Issued At (iat)')
-    end
-  end
-
-  context 'Returns proper error response for JWT::InvalidAudError' do
-    let(:token) { issuer.encode({ iss: 1 }, secret) }
-    let(:headers) { { 'HTTP_AUTHORIZATION' => "Bearer #{token}" } }
-
-    let(:app) do
-      main_app = ->(_env) { raise ::JWT::InvalidAudError }
-      Rack::JWT::Auth.new(main_app, secret: secret)
-    end
-
-    before { perform_request }
-
-    subject { JSON.parse(last_response.body) }
-
-    it 'returns 401 status code' do
-      expect(last_response.status).to eq(401)
-    end
-
-    it 'returns an error message' do
-      expect(subject['error']).to eq('Invalid JWT token : Invalid Audience (aud)')
-    end
-  end
-
-  context 'Returns proper error response for JWT::InvalidSubError' do
-    let(:token) { issuer.encode({ iss: 1 }, secret) }
-    let(:headers) { { 'HTTP_AUTHORIZATION' => "Bearer #{token}" } }
-
-    let(:app) do
-      main_app = ->(_env) { raise ::JWT::InvalidSubError }
-      Rack::JWT::Auth.new(main_app, secret: secret)
-    end
-
-    before { perform_request }
-
-    subject { JSON.parse(last_response.body) }
-
-    it 'returns 401 status code' do
-      expect(last_response.status).to eq(401)
-    end
-
-    it 'returns an error message' do
-      expect(subject['error']).to eq('Invalid JWT token : Invalid Subject (sub)')
-    end
-  end
-
-  context 'Returns proper error response for JWT::InvalidJtiError' do
-    let(:token) { issuer.encode({ iss: 1 }, secret) }
-    let(:headers) { { 'HTTP_AUTHORIZATION' => "Bearer #{token}" } }
-
-    let(:app) do
-      main_app = ->(_env) { raise ::JWT::InvalidJtiError }
-      Rack::JWT::Auth.new(main_app, secret: secret)
-    end
-
-    before { perform_request }
-
-    subject { JSON.parse(last_response.body) }
-
-    it 'returns 401 status code' do
-      expect(last_response.status).to eq(401)
-    end
-
-    it 'returns an error message' do
-      expect(subject['error']).to eq('Invalid JWT token : Invalid JWT ID (jti)')
-    end
-  end
-
-  context 'Returns proper error response for JWT::DecodeError' do
-    let(:token) { issuer.encode({ iss: 1 }, secret) }
-    let(:headers) { { 'HTTP_AUTHORIZATION' => "Bearer #{token}" } }
-
-    let(:app) do
-      main_app = ->(_env) { raise ::JWT::DecodeError }
-      Rack::JWT::Auth.new(main_app, secret: secret)
-    end
-
-    before { perform_request }
-
-    subject { JSON.parse(last_response.body) }
-
-    it 'returns 401 status code' do
-      expect(last_response.status).to eq(401)
-    end
-
-    it 'returns an error message' do
-      expect(subject['error']).to eq('Invalid JWT token : Decode Error')
-    end
-  end
-
-  # Test the pass-through of the options Hash to JWT using Issued At (iat) claim to test..
-  ###
-
-  context 'when token is valid and invalid iat claim is provided, ignore bad iat' do
-    let(:token) { issuer.encode({ iss: 1, iat: Time.now.to_i + 1_000_000 }, secret) }
-    let(:headers) { { 'HTTP_AUTHORIZATION' => "Bearer #{token}" } }
-
-    before { perform_request }
-
-    subject { JSON.parse(last_response.body) }
-
-    it 'returns 200 status code' do
-      expect(last_response.status).to eq(200)
-    end
-
-    it 'process the request' do
-      expect(subject).to eq(body)
-    end
-
-    it 'adds the token payload to the request' do
-      payload = last_response.header['jwt.payload']
-      expect(payload['iss']).to eq(1)
-    end
-
-    it 'adds the token header to the request' do
-      header = last_response.header['jwt.header']
-      expect(header['alg']).to eq('HS256')
-      expect(header['typ']).to eq('JWT')
-    end
-  end
-
-  context 'when token is valid and an invalid iat claim is provided & iat verification enabled' do
-    # The token was issued at an insane time in the future.
-    let(:iat) { Time.now.to_i + 1_000_000 }
-    let(:app) do
-      main_app = ->(env) { [200, env, [body.to_json]] }
-      Rack::JWT::Auth.new(main_app, secret: secret, options: { verify_iat: true })
-    end
-
-    let(:token) { issuer.encode({ iss: 1, iat: iat }, secret) }
-    let(:headers) { { 'HTTP_AUTHORIZATION' => "Bearer #{token}" } }
-
-    before { perform_request }
-
-    subject { JSON.parse(last_response.body) }
-
-    it 'returns 401 status code' do
-      expect(last_response.status).to eq(401)
-    end
-
-    it 'returns an error message' do
-      expect(subject['error']).to eq('Invalid JWT token : Invalid Issued At (iat)')
-    end
-  end
-
-  context 'when token is valid and a valid iat claim & iat verification option enabled' do
-    # The token was issued at a sane Time.now
-    let(:iat) { Time.now.to_i }
-    let(:app) do
-      main_app = ->(env) { [200, env, [body.to_json]] }
-      Rack::JWT::Auth.new(main_app, secret: secret, options: { verify_iat: true })
-    end
-
-    let(:token) { issuer.encode({ iss: 1, iat: iat }, secret) }
-    let(:headers) { { 'HTTP_AUTHORIZATION' => "Bearer #{token}" } }
-
-    before { perform_request }
-
-    subject { JSON.parse(last_response.body) }
-
-    it 'returns 200 status code' do
-      expect(last_response.status).to eq(200)
-    end
-
-    it 'process the request' do
-      expect(subject).to eq(body)
-    end
-
-    it 'adds the token payload to the request' do
-      payload = last_response.header['jwt.payload']
-      expect(payload['iss']).to eq(1)
-    end
-
-    it 'adds the token header to the request' do
-      header = last_response.header['jwt.header']
-      expect(header['alg']).to eq('HS256')
-      expect(header['typ']).to eq('JWT')
-    end
-  end
-
-  context 'succeeds when retrieving the exact path of an excluded path and no token' do
-    let(:app) do
-      main_app = ->(env) { [200, env, [body.to_json]] }
-      Rack::JWT::Auth.new(main_app, secret: secret, exclude: ['/static'])
-    end
-
-    before { get '/static', {}, {} }
-
-    subject { JSON.parse(last_response.body) }
-
-    it 'returns 200 status code' do
-      expect(last_response.status).to eq(200)
-    end
-  end
-
-  context 'succeeds retrieving exact path with trailing slash of an excluded path without token' do
-    let(:app) do
-      main_app = ->(env) { [200, env, [body.to_json]] }
-      Rack::JWT::Auth.new(main_app, secret: secret, exclude: ['/static'])
-    end
-
-    before { get '/static/', {}, {} }
-
-    subject { JSON.parse(last_response.body) }
-
-    it 'returns 200 status code' do
-      expect(last_response.status).to eq(200)
-    end
-  end
-
-  context 'succeeds when retrieving the sub-path of an excluded path and no token' do
-    let(:app) do
-      main_app = ->(env) { [200, env, [body.to_json]] }
-      Rack::JWT::Auth.new(main_app, secret: secret, exclude: ['/static'])
-    end
-
-    before { get '/static/sub/route', {}, {} }
-
-    subject { JSON.parse(last_response.body) }
-
-    it 'returns 200 status code' do
-      expect(last_response.status).to eq(200)
-    end
-  end
-
-  context 'succeeds retrieving sub-path of excluded path with many excluded paths and no token' do
-    let(:app) do
-      main_app = ->(env) { [200, env, [body.to_json]] }
-      Rack::JWT::Auth.new(main_app, secret: secret, exclude: %w(/docs /books /static))
-    end
-
-    before { get '/static/sub/route', {}, {} }
-
-    subject { JSON.parse(last_response.body) }
-
-    it 'returns 200 status code' do
-      expect(last_response.status).to eq(200)
-    end
-  end
-
-  context 'fails when retrieving a non-excluded path and no token' do
-    let(:app) do
-      main_app = ->(env) { [200, env, [body.to_json]] }
-      Rack::JWT::Auth.new(main_app, secret: secret, exclude: %w(/docs /books /static))
-    end
-
-    before { get '/other/stuff', {}, {} }
-
-    subject { JSON.parse(last_response.body) }
-
-    it 'returns 401 status code' do
-      expect(last_response.status).to eq(401)
+  describe 'initialization of' do
+    describe 'secret' do
+      describe 'with only secret: arg provided' do
+        let(:app) { Rack::JWT::Auth.new(inner_app, secret: secret) }
+        it 'succeeds' do
+          expect(app.secret).to eq(secret)
+        end
+      end
+
+      describe 'with no secret: arg provided' do
+        it 'raises ArgumentError' do
+          expect { Rack::JWT::Auth.new(inner_app, {}) }.to raise_error(ArgumentError)
+        end
+      end
+
+      describe 'with secret: arg of invalid type' do
+        it 'raises ArgumentError' do
+          expect { Rack::JWT::Auth.new(inner_app, secret: []) }.to raise_error(ArgumentError)
+        end
+      end
+
+      describe 'with nil secret: arg provided' do
+        it 'raises ArgumentError' do
+          expect { Rack::JWT::Auth.new(inner_app, secret: nil) }.to raise_error(ArgumentError)
+        end
+      end
+
+      describe 'with empty secret: arg provided' do
+        it 'raises ArgumentError' do
+          expect { Rack::JWT::Auth.new(inner_app, secret: '') }.to raise_error(ArgumentError)
+        end
+      end
+
+      describe 'with spaces secret: arg provided' do
+        it 'raises ArgumentError' do
+          expect { Rack::JWT::Auth.new(inner_app, secret: '     ') }.to raise_error(ArgumentError)
+        end
+      end
+    end
+
+    describe 'verify' do
+      describe 'with true arg' do
+        let(:app) { Rack::JWT::Auth.new(inner_app, secret: secret, verify: true) }
+
+        it 'succeeds' do
+          header 'Authorization', "Bearer #{issuer.encode(payload, secret, 'HS256')}"
+          get('/')
+          expect(last_response.status).to eq 200
+        end
+      end
+
+      describe 'with false arg' do
+        let(:app) { Rack::JWT::Auth.new(inner_app, secret: secret, verify: false) }
+
+        it 'succeeds' do
+          header 'Authorization', "Bearer #{issuer.encode(payload, secret, 'HS256')}"
+          get('/')
+          expect(last_response.status).to eq 200
+        end
+      end
+
+      describe 'with a bad arg' do
+        it 'raises ArgumentError' do
+          expect { Rack::JWT::Auth.new(inner_app, secret: secret, verify: "badStringArg") }.to raise_error(ArgumentError)
+        end
+      end
+    end
+
+    describe 'options' do
+      describe 'when algorithm "none" and secret is nil and verify is false' do
+        let(:app) { Rack::JWT::Auth.new(inner_app, secret: nil, verify: false, options: { algorithm: 'none' }) }
+
+        it 'succeeds' do
+          header 'Authorization', "Bearer #{issuer.encode(payload, secret, 'HS256')}"
+          get('/')
+          expect(last_response.status).to eq 200
+        end
+      end
+
+      describe 'when algorithm "none" and secret not nil but verify is false' do
+        it 'raises an exception' do
+          args = { secret: secret, verify: false, options: { algorithm: 'none' } }
+          expect { Rack::JWT::Auth.new(inner_app, args) }.to raise_error(ArgumentError)
+        end
+      end
+
+      describe 'when algorithm "none" and secret is nil but verify not false' do
+        it 'raises an exception' do
+          args = { secret: nil, verify: true, options: { algorithm: 'none' } }
+          expect { Rack::JWT::Auth.new(inner_app, args) }.to raise_error(ArgumentError)
+        end
+      end
+
+      describe 'when invalid algorithm provided' do
+        it 'raises an exception' do
+          args = { secret: secret, verify: true, options: { algorithm: 'badalg' } }
+          expect { Rack::JWT::Auth.new(inner_app, args) }.to raise_error(ArgumentError)
+        end
+      end
+    end
+
+    # see also exclusion_spec.rb
+    describe 'exclude' do
+      describe 'when a type other than Array provided' do
+        it 'raises an exception' do
+          args = { secret: secret, exclude: {} }
+          expect { Rack::JWT::Auth.new(inner_app, args) }.to raise_error(ArgumentError)
+        end
+      end
+
+      describe 'when Array contains non-String elements' do
+        it 'raises an exception' do
+          args = { secret: secret, exclude: ['/foo', nil, '/bar'] }
+          expect { Rack::JWT::Auth.new(inner_app, args) }.to raise_error(ArgumentError)
+        end
+      end
+
+      describe 'when Array contains empty String elements' do
+        it 'raises an exception' do
+          args = { secret: secret, exclude: ['/foo', '', '/bar'] }
+          expect { Rack::JWT::Auth.new(inner_app, args) }.to raise_error(ArgumentError)
+        end
+      end
+
+      describe 'when Array contains elements that do not start with a /' do
+        it 'raises an exception' do
+          args = { secret: secret, exclude: ['/foo', 'bar', '/baz'] }
+          expect { Rack::JWT::Auth.new(inner_app, args) }.to raise_error(ArgumentError)
+        end
+      end
     end
   end
 end
