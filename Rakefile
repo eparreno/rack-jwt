@@ -1,6 +1,5 @@
 require 'bundler/gem_tasks'
 require 'rspec/core/rake_task'
-require 'rubocop/rake_task'
 
 desc 'Run RSpec'
 RSpec::Core::RakeTask.new do |t|
@@ -8,5 +7,3 @@ RSpec::Core::RakeTask.new do |t|
 end
 
 task default: :spec
-
-RuboCop::RakeTask.new
