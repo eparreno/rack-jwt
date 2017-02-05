@@ -7,11 +7,11 @@ require 'rack/jwt/version'
 Gem::Specification.new do |spec|
   spec.name          = 'rack-jwt'
   spec.version       = Rack::JWT::VERSION
-  spec.authors       = ['Mr. Eigenbart']
-  spec.email         = ['eigenbart@gmail.com']
+  spec.authors       = ['Mr. Eigenbart', 'Emili Parreno']
+  spec.email         = ['emili@eparreno.com']
   spec.summary       = 'Rack middleware that provides authentication based on JSON Web Tokens.'
   spec.description   = 'Rack middleware that provides authentication based on JSON Web Tokens.'
-  spec.homepage      = 'https://github.com/eigenbart/rack-jwt'
+  spec.homepage      = 'https://github.com/eparreno/rack-jwt'
   spec.license       = 'MIT'
 
   spec.files         = Dir.glob('lib/**/*') + %w(LICENSE.txt README.md)
