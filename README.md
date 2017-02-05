@@ -1,8 +1,8 @@
 # Rack::JWT
 
 [![Gem Version](https://badge.fury.io/rb/rack-jwt.svg)](http://badge.fury.io/rb/rack-jwt)
-[![Build Status](https://travis-ci.org/eigenbart/rack-jwt.svg)](https://travis-ci.org/eigenbart/rack-jwt)
-[![Code Climate](https://codeclimate.com/github/eigenbart/rack-jwt/badges/gpa.svg)](https://codeclimate.com/github/eigenbart/rack-jwt)
+[![Build Status](https://travis-ci.org/eparreno/rack-jwt.svg)](https://travis-ci.org/eparreno/rack-jwt)
+[![Code Climate](https://codeclimate.com/github/eparreno/rack-jwt/badges/gpa.svg)](https://codeclimate.com/github/eparreno/rack-jwt)
 
 ## About
 
