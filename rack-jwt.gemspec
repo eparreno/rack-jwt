@@ -26,6 +26,7 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency 'rspec',     '~> 3.4.0'
   spec.add_development_dependency 'simplecov', '~> 0.11.2'
 
-  spec.add_runtime_dependency 'rack', '>= 1.6.0'
+  # without it bundler trying to get last rack version, but it needs ruby >= '2.2.2'
+  spec.add_runtime_dependency 'rack', RUBY_VERSION <= '2.2.2' ? '~> 1.6' : '>= 1.6.0'
   spec.add_runtime_dependency 'jwt',  '~> 1.5.2'
 end
