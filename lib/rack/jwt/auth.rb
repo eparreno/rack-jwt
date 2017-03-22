@@ -1,9 +1,12 @@
 require 'jwt'
+require 'logger'
 
 module Rack
   module JWT
     # Authentication middleware
     class Auth
+      attr_reader :logger
+
       attr_reader :secret
       attr_reader :verify
       attr_reader :options
@@ -36,6 +39,7 @@ module Rack
 
         @secret  = @secret.strip if @secret.is_a?(String)
         @options[:algorithm] = DEFAULT_ALGORITHM if @options[:algorithm].nil?
+        @logger  = opts[:logger] || ::Logger.new(STDOUT)
 
         check_secret_type!
         check_secret!
@@ -173,6 +177,7 @@ module Rack
       end
 
       def return_error(message)
+        logger.warn("rack-jwt: #{message}")
         body    = { error: message }.to_json
         headers = { 'Content-Type' => 'application/json', 'Content-Length' => body.bytesize.to_s }
 
