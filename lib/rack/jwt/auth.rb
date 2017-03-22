@@ -1,9 +1,11 @@
 require 'jwt'
+require 'logger'
 
 module Rack
   module JWT
     # Authentication middleware
     class Auth
+      attr_reader :logger
       attr_reader :secret
       attr_reader :verify
       attr_reader :options
@@ -28,12 +30,12 @@ module Rack
       # Initialization should fail fast with an ArgumentError
       # if any args are invalid.
       def initialize(app, opts = {})
+        @logger  = opts[:logger] || ::Logger.new(STDOUT)
         @app     = app
         @secret  = opts.fetch(:secret, nil)
         @verify  = opts.fetch(:verify, true)
         @options = opts.fetch(:options, {})
-        @exclude = opts.fetch(:exclude, [])
-
+        @exclude = compile_excludes!(opts.fetch(:exclude, []))
         @secret  = @secret.strip if @secret.is_a?(String)
         @options[:algorithm] = DEFAULT_ALGORITHM if @options[:algorithm].nil?
 
@@ -43,7 +45,6 @@ module Rack
         check_verify_type!
         check_options_type!
         check_valid_algorithm!
-        check_exclude_type!
       end
 
       def call(env)
@@ -136,28 +137,40 @@ module Rack
         end
       end
 
-      def check_exclude_type!
-        unless @exclude.is_a?(Array)
+      # Compile the list of excludes provided by the user. Each regex is left
+      # as is, each string is turned into the regex equivalent of #start_with?
+      def compile_excludes!(array_of_excludes)
+
+        unless array_of_excludes.is_a?(Array)
           raise ArgumentError, 'exclude argument must be an Array'
         end
 
-        @exclude.each do |x|
-          unless x.is_a?(String)
-            raise ArgumentError, 'each exclude Array element must be a String'
-          end
+        @exclude = array_of_excludes.map do |ex|
 
-          if x.empty?
-            raise ArgumentError, 'each exclude Array element must not be empty'
-          end
+          logger.debug("rack-jwt: compiling exclude '#{ex}'")
 
-          unless x.start_with?('/')
-            raise ArgumentError, 'each exclude Array element must start with a /'
+          if ex.is_a?(String)
+            if !ex.start_with?('/')
+              raise ArgumentError.new("Cannot use '#{ex}' as an exclude: string excludes must start with '/'")
+            else
+              if(rgx = Regexp.compile(ex) rescue nil).nil?
+                raise ArgumentError.new("Could not compile #{x} to regex")
+              else
+                rgx
+              end
+            end
+          elsif ex.is_a?(Regexp)
+            ex
+          else
+            raise ArgumentError.new("exclude path most be a string or regexp")
           end
         end
       end
 
       def path_matches_excluded_path?(env)
-        @exclude.any? { |ex| env['PATH_INFO'].start_with?(ex) }
+        @exclude.any? do |ex|
+          env['PATH_INFO'] =~ /#{ex}/
+        end
       end
 
       def valid_auth_header?(env)
@@ -173,6 +186,7 @@ module Rack
       end
 
       def return_error(message)
+        logger.warn("rack-jwt: #{message}")
         body    = { error: message }.to_json
         headers = { 'Content-Type' => 'application/json', 'Content-Length' => body.bytesize.to_s }
 
