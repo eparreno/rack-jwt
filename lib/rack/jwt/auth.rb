@@ -150,18 +150,13 @@ module Rack
             raise ArgumentError, 'each exclude Array element must be a String'
           end
 
-          if x.empty?
-            raise ArgumentError, 'each exclude Array element must not be empty'
+          if(rgx = Regexp.compile(x) rescue nil).nil?
+            raise ArgumentError, "Could not compile regex: #{x}"
           end
-
-          unless x.start_with?('/')
-            raise ArgumentError, 'each exclude Array element must start with a /'
-          end
-        end
       end
 
       def path_matches_excluded_path?(env)
-        @exclude.any? { |ex| env['PATH_INFO'].start_with?(ex) }
+        @exclude.any? { |ex| env['PATH_INFO'] =~ /#{ex}/ }
       end
 
       def valid_auth_header?(env)
