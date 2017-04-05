@@ -7,7 +7,7 @@ require_relative 'lib/rack/jwt/version.rb'
 VERSION = Rack::JWT::VERSION
 TAG = "v#{VERSION}"
 NAME = Bundler::GemHelper.instance.gemspec.name
-PUSH_URL = "https://#{ENV['GEM_SECRET']}@push.fury.io/waybetter/"
+PUSH_URL = "https://#{ENV['WB_GEM_SECRET']}@push.fury.io/waybetter/"
 PKG_FN = "pkg/#{NAME}-#{VERSION}.gem"
 
 desc 'Run RSpec'
@@ -32,8 +32,8 @@ end
 
 <<<<<<< HEAD
 task "check_gemfury_repo_access" do
-  unless ENV['GEM_SECRET']
-    warn "It doesn't look like you have WB_GEM_SOURCE set. Cannot continue."
+  unless ENV['WB_GEM_SECRET']
+    warn "It doesn't look like you have WB_GEM_SECRET set. Cannot continue."
     exit(1)
   end
 end
