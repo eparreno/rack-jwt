@@ -44,6 +44,7 @@ module Rack
         check_options_type!
         check_valid_algorithm!
         check_exclude_type!
+        initialize_exclude_paths!
       end
 
       def call(env)
@@ -142,22 +143,23 @@ module Rack
         end
 
         @exclude.each do |x|
-          unless x.is_a?(String)
-            raise ArgumentError, 'each exclude Array element must be a String'
+          unless x.is_a?(String) || x.is_a?(Regexp)
+            raise ArgumentError,
+              'each exclude Array element must be a String or a Regex'
           end
 
-          if x.empty?
+          if x.is_a?(String) && x.empty?
             raise ArgumentError, 'each exclude Array element must not be empty'
           end
 
-          unless x.start_with?('/')
+          if x.is_a?(String) && !x.start_with?('/')
             raise ArgumentError, 'each exclude Array element must start with a /'
           end
         end
       end
 
       def path_matches_excluded_path?(env)
-        @exclude.any? { |ex| env['PATH_INFO'].start_with?(ex) }
+        @exclude.any? { |ex| ex =~ env['PATH_INFO'] }
       end
 
       def valid_auth_header?(env)
@@ -177,6 +179,14 @@ module Rack
         headers = { 'Content-Type' => 'application/json', 'Content-Length' => body.bytesize.to_s }
 
         [401, headers, [body]]
+      end
+
+      def initialize_exclude_paths!
+        return if @exclude.empty?
+
+        @exclude = @exclude.map do |pattern|
+          Regexp.new(pattern)
+        end
       end
     end
   end

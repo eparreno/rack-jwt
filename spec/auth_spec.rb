@@ -124,9 +124,9 @@ describe Rack::JWT::Auth do
         end
       end
 
-      describe 'when Array contains non-String elements' do
+      describe 'when Array contains non-String and non-Regexp elements' do
         it 'raises an exception' do
-          args = { secret: secret, exclude: ['/foo', nil, '/bar'] }
+          args = { secret: secret, exclude: ['/foo', nil, '/bar', /\/foo/] }
           expect { Rack::JWT::Auth.new(inner_app, args) }.to raise_error(ArgumentError)
         end
       end
