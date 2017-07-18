@@ -187,7 +187,7 @@ module Rack
 
       def return_error(message)
         logger.warn("rack-jwt: #{message}")
-        body    = { error: message }.to_json
+        body    = { error: message, status: 401 }.to_json
         headers = { 'Content-Type' => 'application/json', 'Content-Length' => body.bytesize.to_s }
 
         [401, headers, [body]]
