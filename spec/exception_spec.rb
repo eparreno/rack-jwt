@@ -26,7 +26,7 @@ describe Rack::JWT::Auth do
       it 'returns a 401 and the correct error msg' do
         expect(last_response.status).to eq 401
         body = JSON.parse(last_response.body, symbolize_names: true)
-        expect(body).to eq(error: 'Invalid JWT token : Signature Verification Error')
+        expect(body).to eq(error: 'Invalid JWT token : Signature Verification Error', status: 401)
       end
     end
 
@@ -36,7 +36,7 @@ describe Rack::JWT::Auth do
       it 'returns a 401 and the correct error msg' do
         expect(last_response.status).to eq 401
         body = JSON.parse(last_response.body, symbolize_names: true)
-        expect(body).to eq(error: 'Invalid JWT token : Expired Signature (exp)')
+        expect(body).to eq(error: 'Invalid JWT token : Expired Signature (exp)', status: 401)
       end
     end
 
@@ -46,7 +46,7 @@ describe Rack::JWT::Auth do
       it 'returns a 401 and the correct error msg' do
         expect(last_response.status).to eq 401
         body = JSON.parse(last_response.body, symbolize_names: true)
-        expect(body).to eq(error: 'Invalid JWT token : Incorrect Key Algorithm')
+        expect(body).to eq(error: 'Invalid JWT token : Incorrect Key Algorithm', status: 401)
       end
     end
 
@@ -56,7 +56,7 @@ describe Rack::JWT::Auth do
       it 'returns a 401 and the correct error msg' do
         expect(last_response.status).to eq 401
         body = JSON.parse(last_response.body, symbolize_names: true)
-        expect(body).to eq(error: 'Invalid JWT token : Immature Signature (nbf)')
+        expect(body).to eq(error: 'Invalid JWT token : Immature Signature (nbf)', status: 401)
       end
     end
 
@@ -66,7 +66,7 @@ describe Rack::JWT::Auth do
       it 'returns a 401 and the correct error msg' do
         expect(last_response.status).to eq 401
         body = JSON.parse(last_response.body, symbolize_names: true)
-        expect(body).to eq(error: 'Invalid JWT token : Invalid Issuer (iss)')
+        expect(body).to eq(error: 'Invalid JWT token : Invalid Issuer (iss)', status: 401)
       end
     end
 
@@ -76,7 +76,7 @@ describe Rack::JWT::Auth do
       it 'returns a 401 and the correct error msg' do
         expect(last_response.status).to eq 401
         body = JSON.parse(last_response.body, symbolize_names: true)
-        expect(body).to eq(error: 'Invalid JWT token : Invalid Issued At (iat)')
+        expect(body).to eq(error: 'Invalid JWT token : Invalid Issued At (iat)', status: 401)
       end
     end
 
@@ -86,7 +86,7 @@ describe Rack::JWT::Auth do
       it 'returns a 401 and the correct error msg' do
         expect(last_response.status).to eq 401
         body = JSON.parse(last_response.body, symbolize_names: true)
-        expect(body).to eq(error: 'Invalid JWT token : Invalid Audience (aud)')
+        expect(body).to eq(error: 'Invalid JWT token : Invalid Audience (aud)', status: 401)
       end
     end
 
@@ -96,7 +96,7 @@ describe Rack::JWT::Auth do
       it 'returns a 401 and the correct error msg' do
         expect(last_response.status).to eq 401
         body = JSON.parse(last_response.body, symbolize_names: true)
-        expect(body).to eq(error: 'Invalid JWT token : Invalid Subject (sub)')
+        expect(body).to eq(error: 'Invalid JWT token : Invalid Subject (sub)', status: 401)
       end
     end
 
@@ -106,7 +106,7 @@ describe Rack::JWT::Auth do
       it 'returns a 401 and the correct error msg' do
         expect(last_response.status).to eq 401
         body = JSON.parse(last_response.body, symbolize_names: true)
-        expect(body).to eq(error: 'Invalid JWT token : Invalid JWT ID (jti)')
+        expect(body).to eq(error: 'Invalid JWT token : Invalid JWT ID (jti)', status: 401)
       end
     end
 
@@ -116,7 +116,7 @@ describe Rack::JWT::Auth do
       it 'returns a 401 and the correct error msg' do
         expect(last_response.status).to eq 401
         body = JSON.parse(last_response.body, symbolize_names: true)
-        expect(body).to eq(error: 'Invalid JWT token : Decode Error')
+        expect(body).to eq(error: 'Invalid JWT token : Decode Error', status: 401)
       end
     end
   end
