@@ -80,7 +80,7 @@ describe Rack::JWT::Auth do
             get('/')
             expect(last_response.status).to eq 401
             body = JSON.parse(last_response.body, symbolize_names: true)
-            expect(body).to eq({:error=>"Invalid JWT token : Invalid Issued At (iat)", status: 401})
+            expect(body).to eq({:error=>{message: "Invalid JWT token : Invalid Issued At (iat)", status: 401}})
           end
         end
       end
