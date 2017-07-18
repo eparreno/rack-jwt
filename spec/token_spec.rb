@@ -242,7 +242,7 @@ describe Rack::JWT::Auth do
         get('/')
         expect(last_response.status).to eq 401
         body = JSON.parse(last_response.body, symbolize_names: true)
-        expect(body).to eq(error: 'Missing Authorization header', status: 401)
+        expect(body).to eq(error: {message: 'Missing Authorization header', status: 401})
         expect(last_response.headers['jwt.header']).to eq(nil)
         expect(last_response.headers['jwt.payload']).to eq(nil)
       end
@@ -254,7 +254,7 @@ describe Rack::JWT::Auth do
         get('/')
         expect(last_response.status).to eq 401
         body = JSON.parse(last_response.body, symbolize_names: true)
-        expect(body).to eq(error: 'Invalid Authorization header format', status: 401)
+        expect(body).to eq(error: {message: 'Invalid Authorization header format', status: 401})
         expect(last_response.headers['jwt.header']).to eq(nil)
         expect(last_response.headers['jwt.payload']).to eq(nil)
       end
@@ -266,7 +266,7 @@ describe Rack::JWT::Auth do
         get('/')
         expect(last_response.status).to eq 401
         body = JSON.parse(last_response.body, symbolize_names: true)
-        expect(body).to eq(error: 'Invalid Authorization header format', status: 401)
+        expect(body).to eq(error: {message: 'Invalid Authorization header format', status: 401})
         expect(last_response.headers['jwt.header']).to eq(nil)
         expect(last_response.headers['jwt.payload']).to eq(nil)
       end
@@ -278,7 +278,7 @@ describe Rack::JWT::Auth do
         get('/')
         expect(last_response.status).to eq 401
         body = JSON.parse(last_response.body, symbolize_names: true)
-        expect(body).to eq(error: 'Invalid Authorization header format', status: 401)
+        expect(body).to eq(error: {message: 'Invalid Authorization header format', status: 401})
         expect(last_response.headers['jwt.header']).to eq(nil)
         expect(last_response.headers['jwt.payload']).to eq(nil)
       end
@@ -290,7 +290,7 @@ describe Rack::JWT::Auth do
         get('/')
         expect(last_response.status).to eq 401
         body = JSON.parse(last_response.body, symbolize_names: true)
-        expect(body).to eq(error: 'Invalid Authorization header format', status: 401)
+        expect(body).to eq(error: {message: 'Invalid Authorization header format', status: 401})
         expect(last_response.headers['jwt.header']).to eq(nil)
         expect(last_response.headers['jwt.payload']).to eq(nil)
       end
@@ -302,7 +302,7 @@ describe Rack::JWT::Auth do
         get('/')
         expect(last_response.status).to eq 401
         body = JSON.parse(last_response.body, symbolize_names: true)
-        expect(body).to eq(error: 'Invalid Authorization header format', status: 401)
+        expect(body).to eq(error: {message: 'Invalid Authorization header format', status: 401})
         expect(last_response.headers['jwt.header']).to eq(nil)
         expect(last_response.headers['jwt.payload']).to eq(nil)
       end
@@ -314,7 +314,7 @@ describe Rack::JWT::Auth do
         get('/')
         expect(last_response.status).to eq 401
         body = JSON.parse(last_response.body, symbolize_names: true)
-        expect(body).to eq(error: 'Invalid Authorization header format', status: 401)
+        expect(body).to eq(error: {message: 'Invalid Authorization header format', status: 401})
         expect(last_response.headers['jwt.header']).to eq(nil)
         expect(last_response.headers['jwt.payload']).to eq(nil)
       end
@@ -326,7 +326,7 @@ describe Rack::JWT::Auth do
         get('/')
         expect(last_response.status).to eq 401
         body = JSON.parse(last_response.body, symbolize_names: true)
-        expect(body).to eq(error: 'Invalid Authorization header format', status: 401)
+        expect(body).to eq(error: {message: 'Invalid Authorization header format', status: 401})
         expect(last_response.headers['jwt.header']).to eq(nil)
         expect(last_response.headers['jwt.payload']).to eq(nil)
       end
@@ -338,7 +338,7 @@ describe Rack::JWT::Auth do
         get('/')
         expect(last_response.status).to eq 401
         body = JSON.parse(last_response.body, symbolize_names: true)
-        expect(body).to eq(error: 'Invalid JWT token : Signature Verification Error', status: 401)
+        expect(body).to eq(error: {message: 'Invalid JWT token : Signature Verification Error', status: 401})
         expect(last_response.headers['jwt.header']).to eq(nil)
         expect(last_response.headers['jwt.payload']).to eq(nil)
       end
