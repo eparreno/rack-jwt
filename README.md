@@ -61,7 +61,7 @@ Cuba.use Rack::JWT::Auth, my_args
 ### Rails
 
 ```ruby
-Rails.application.config.middleware.use, Rack::JWT::Auth, my_args
+Rails.application.config.middleware.use Rack::JWT::Auth, my_args
 ```
 
 ## Generating tokens
