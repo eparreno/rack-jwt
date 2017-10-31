@@ -10,6 +10,7 @@ module Rack
       attr_reader :verify
       attr_reader :options
       attr_reader :exclude
+      attr_reader :optional
 
       SUPPORTED_ALGORITHMS = [
         'none',
@@ -48,7 +49,8 @@ module Rack
         @secret  = opts.fetch(:secret, nil)
         @verify  = opts.fetch(:verify, true)
         @options = opts.fetch(:options, {})
-        @exclude = compile_excludes!(opts.fetch(:exclude, []))
+        @exclude = compile_patterns!(opts.fetch(:exclude, []))
+        @optional = compile_patterns!(opts.fetch(:optional, []))
         @secret  = @secret.strip if @secret.is_a?(String)
         @options[:algorithm] = DEFAULT_ALGORITHM if @options[:algorithm].nil?
 
@@ -61,10 +63,14 @@ module Rack
       end
 
       def call(env)
-        if path_matches_excluded_path?(env)
+        if path_is_excluded?(env)
           @app.call(env)
         elsif missing_auth_header?(env)
-          return_error('Missing Authorization header')
+          if path_is_optional?(env)
+            @app.call(env)
+          else
+            return_error('Missing Authorization header')
+          end
         elsif invalid_auth_header?(env)
           return_error('Invalid Authorization header format')
         else
@@ -147,21 +153,19 @@ module Rack
         end
       end
 
-      # Compile the list of excludes provided by the user. Each regex is left
+      # Compile the list of patterns provided by the user. Each regex is left
       # as is, each string is turned into the regex equivalent of #start_with?
-      def compile_excludes!(array_of_excludes)
-
-        unless array_of_excludes.is_a?(Array)
-          raise ArgumentError, 'exclude argument must be an Array'
+      def compile_patterns!(patterns)
+        unless patterns.is_a?(Array)
+          raise ArgumentError, 'patterns argument must be an Array'
         end
 
-        @exclude = array_of_excludes.map do |ex|
-
-          logger.debug("rack-jwt: compiling exclude '#{ex}'")
+        patterns.map do |ex|
+          logger.debug("rack-jwt: compiling pattern '#{ex}'")
 
           if ex.is_a?(String)
             if !ex.start_with?('/')
-              raise ArgumentError.new("Cannot use '#{ex}' as an exclude: string excludes must start with '/'")
+              raise ArgumentError.new("Cannot use '#{ex}' as an pattern: string pattern must start with '/'")
             else
               if(rgx = Regexp.compile(ex) rescue nil).nil?
                 raise ArgumentError.new("Could not compile #{x} to regex")
@@ -172,14 +176,22 @@ module Rack
           elsif ex.is_a?(Regexp)
             ex
           else
-            raise ArgumentError.new("exclude path most be a string or regexp")
+            raise ArgumentError.new("pattern must be a string or regexp")
           end
         end
       end
 
-      def path_matches_excluded_path?(env)
-        @exclude.any? do |ex|
-          env['PATH_INFO'] =~ /#{ex}/
+      def path_is_excluded?(env)
+        path_matches_pattern?(env['PATH_INFO'], @exclude)
+      end
+
+      def path_is_optional?(env)
+        path_matches_pattern?(env['PATH_INFO'],@optional)
+      end
+
+      def path_matches_pattern?(path, patterns)
+        patterns.any? do |pattern|
+          path =~ /#{pattern}/
         end
       end
 
