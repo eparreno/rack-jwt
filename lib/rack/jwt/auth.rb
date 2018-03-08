@@ -56,7 +56,10 @@ module Rack
           if path_is_optional?(env)
             @app.call(env)
           else
-            return_error('Missing Authorization header')
+            # note: no need for warning log message on this, it happens all
+            # the time when bots are fishing around the site for entry. Adds
+            # too much noise to logs.
+            return_error('Missing Authorization header', log_level: :debug)
           end
         elsif invalid_auth_header?(env)
           return_error('Invalid Authorization header format')
@@ -197,8 +200,8 @@ module Rack
         env['HTTP_AUTHORIZATION'].nil? || env['HTTP_AUTHORIZATION'].strip.empty?
       end
 
-      def return_error(message)
-        logger.warn("rack-jwt: #{message}")
+      def return_error(message, log_level: :warn)
+        logger.send(log_level, "rack-jwt: #{message}")
         body    = { error: { message: message, status: 401 } }.to_json
         headers = { 'Content-Type' => 'application/json', 'Content-Length' => body.bytesize.to_s }
 
