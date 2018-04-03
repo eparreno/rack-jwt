@@ -90,7 +90,10 @@ module Rack
 
         begin
           decoded_token = Token.decode(token, @secret, @verify, @options)
-          env['jwt.payload'] = decoded_token.first
+          env['jwt.payload'] = payload = decoded_token.first
+          if payload.is_a?(Hash)
+            Thread.current[:jwt_sub] = payload['sub']
+          end
           env['jwt.header'] = decoded_token.last
           @app.call(env)
         rescue ::JWT::VerificationError
