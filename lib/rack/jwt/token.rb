@@ -5,6 +5,7 @@ module Rack
       # abc123.abc123.abc123    (w/ signature)
       # abc123.abc123.          ('none')
       TOKEN_REGEX = /\A([a-zA-Z0-9\-\_\~\+\\]+\.[a-zA-Z0-9\-\_\~\+\\]+\.[a-zA-Z0-9\-\_\~\+\\]*)\z/
+      DEFAULT_HEADERS = {typ: 'JWT'}
 
       def self.encode(payload, secret, alg = 'HS256')
         raise 'Invalid payload. Must be a Hash.' unless payload.is_a?(Hash)
@@ -14,9 +15,9 @@ module Rack
         # if using an unsigned token ('none' alg) you *must* set the `secret`
         # to `nil` in which case any user provided `secret` will be ignored.
         if alg == 'none'
-          ::JWT.encode(payload, nil, alg)
+          ::JWT.encode(payload, nil, alg, DEFAULT_HEADERS)
         else
-          ::JWT.encode(payload, secret, alg)
+          ::JWT.encode(payload, secret, alg, DEFAULT_HEADERS)
         end
       end
 
