@@ -8,6 +8,10 @@
 
 This gem provides JSON Web Token (JWT) based authentication.
 
+## Requirements
+
+- Ruby 2.3.8 or greater
+
 ## Installation
 
 Add this line to your application's `Gemfile`:
