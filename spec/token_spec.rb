@@ -201,6 +201,23 @@ describe Rack::JWT::Auth do
         expect(last_response.headers['jwt.payload']).to eq("foo" => "bar")
       end
     end
+
+    describe 'with valid ED25519 key token' do
+      private_key = RbNaCl::Signatures::Ed25519::SigningKey.generate
+      public_key  = private_key.verify_key
+
+      let(:app) { Rack::JWT::Auth.new(inner_app, secret: public_key, verify: verify, options: { algorithm: 'ED25519' }) }
+
+      it 'returns a 200' do
+        header 'Authorization', "Bearer #{issuer.encode(payload, private_key, 'ED25519')}"
+        get('/')
+        expect(last_response.status).to eq 200
+        body = JSON.parse(last_response.body, symbolize_names: true)
+        expect(body).to eq(payload)
+        expect(last_response.headers['jwt.header']).to eq({"typ"=>"JWT", "alg"=>"ED25519"})
+        expect(last_response.headers['jwt.payload']).to eq("foo" => "bar")
+      end
+    end
   end
 
   describe 'receiving invalid Authorization headers' do

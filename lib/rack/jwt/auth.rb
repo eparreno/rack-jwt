@@ -9,7 +9,20 @@ module Rack
       attr_reader :options
       attr_reader :exclude
 
-      SUPPORTED_ALGORITHMS = %w(none HS256 HS384 HS512 RS256 RS384 RS512 ES256 ES384 ES512).freeze
+      SUPPORTED_ALGORITHMS = [
+        'none',
+        'HS256',
+        'HS384',
+        'HS512',
+        'RS256',
+        'RS384',
+        'RS512',
+        'ES256',
+        'ES384',
+        'ES512',
+        ('ED25519' if defined?(RbNaCl)),
+      ].compact.freeze
+
       DEFAULT_ALGORITHM = 'HS256'.freeze
 
       # The last segment gets dropped for 'none' algorithm since there is no
@@ -94,10 +107,7 @@ module Rack
       end
 
       def check_secret_type!
-        unless @secret.nil? ||
-               @secret.is_a?(String) ||
-               @secret.is_a?(OpenSSL::PKey::RSA) ||
-               @secret.is_a?(OpenSSL::PKey::EC)
+        unless Token.secret_of_valid_type?(@secret)
           raise ArgumentError, 'secret argument must be a valid type'
         end
       end
