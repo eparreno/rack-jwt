@@ -40,7 +40,7 @@ $ gem install rack-jwt
 
 * `verify` : optional : Boolean : Determines whether JWT will verify tokens keys for mismatch key types when decoded. Default is `true`. Set to `false` if you are using the `'none'` algorithm.
 
-* `options` : optional : Hash : A hash of options that are passed through to JWT to configure supported claims and algorithms. See [the ruby-jwt docs](https://github.com/progrium/ruby-jwt#support-for-reserved-claim-names) for much more info on the available options and how they work. These options are passed through without change to the underlying `ruby-jwt` gem. By default only expiration (exp) and Not Before (nbf) claims are verified. Pass in an algorithm choice like `{ algorithm: 'HS256' }`.
+* `options` : optional : Hash : A hash of options that are passed through to JWT to configure supported claims and algorithms. See the ruby-jwt docs for [more information of the algorithms and their requirements](https://github.com/jwt/ruby-jwt#algorithms-and-usage) as well as [more information on the supported claims](https://github.com/progrium/ruby-jwt#support-for-reserved-claim-names). These options are passed through without change to the underlying `ruby-jwt` gem. By default only expiration (exp) and Not Before (nbf) claims are verified. Pass in an algorithm choice like `{ algorithm: 'HS256' }`.
 
 * `exclude` : optional : Array : An Array of path strings representing paths that should not be checked for the presence of a valid JWT token. Excludes sub-paths as of specified paths as well (e.g. `%w(/docs)` excludes `/docs/some/thing.html` also). Each path should start with a `/`. If a path matches the current request path this entire middleware is skipped and no authentication or verification of tokens takes place.
 
@@ -81,10 +81,14 @@ the [ruby-jwt gem repo](https://github.com/jwt/ruby-jwt/blob/master/README.md)
 The `algorithm` is an optional String and can be one of the following (default HMAC 'HS256'):
 
 ```ruby
-%w(none HS256 HS384 HS512 RS256 RS384 RS512 ES256 ES384 ES512)
+%w(none HS256 HS384 HS512 RS256 RS384 RS512 ED25519 ES256 ES384 ES512)
 
 HS256 is the default
 ```
+
+Note that `ED25519` support depends on the `rbnacl` which is _not_ already included by the
+`rack-jwt` gem. If you wish to use the `ED25519` algorith, you must also manually require
+`rbnacl` gem in addition to `rack-jwt`.
 
 Here is a sample payload with illustrative data. You don't have to use all,
 or even most, of these.

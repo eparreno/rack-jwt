@@ -38,6 +38,15 @@ module Rack
         end
       end
 
+      def self.secret_of_valid_type?(secret)
+        secret.nil? ||
+          secret.is_a?(String) ||
+          secret.is_a?(OpenSSL::PKey::RSA) ||
+          secret.is_a?(OpenSSL::PKey::EC)  ||
+          (defined?(RbNaCl) && secret.is_a?(RbNaCl::Signatures::Ed25519::SigningKey)) ||
+          (defined?(RbNaCl) && secret.is_a?(RbNaCl::Signatures::Ed25519::VerifyKey))
+      end
+
       # Private Utility Class Methods
       # See : https://gist.github.com/Integralist/bb8760d11a03c88da151
 
@@ -55,14 +64,6 @@ module Rack
         verify.nil? || verify.is_a?(FalseClass) || verify.is_a?(TrueClass)
       end
       private_class_method :verify_of_valid_type?
-
-      def self.secret_of_valid_type?(secret)
-        secret.nil? ||
-          secret.is_a?(String) ||
-          secret.is_a?(OpenSSL::PKey::RSA) ||
-          secret.is_a?(OpenSSL::PKey::EC)
-      end
-      private_class_method :secret_of_valid_type?
     end
   end
 end
