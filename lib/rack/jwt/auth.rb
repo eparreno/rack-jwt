@@ -80,6 +80,7 @@ module Rack
         check_options_type!
         check_valid_algorithm!
         check_exclude_type!
+        check_on_error_callable!
       end
 
       def call(env)
@@ -93,22 +94,19 @@ module Rack
       private
 
       def verify_token(env)
+        raise MissingAuthHeader if missing_auth_header?(env)
+        raise InvalidAuthHeaderFormat if invalid_auth_header?(env)
+
         # extract the token from the Authorization: Bearer header
         # with a regex capture group.
+        token = BEARER_TOKEN_REGEX.match(env['HTTP_AUTHORIZATION'])[1]
 
-        begin
-          raise MissingAuthHeader if missing_auth_header?(env)
-          raise InvalidAuthHeaderFormat if invalid_auth_header?(env)
-
-          token = BEARER_TOKEN_REGEX.match(env['HTTP_AUTHORIZATION'])[1]
-
-          decoded_token = Token.decode(token, @secret, @verify, @options)
-          env['jwt.payload'] = decoded_token.first
-          env['jwt.header'] = decoded_token.last
-          @app.call(env)
-        rescue *ERRORS_TO_RESCUE => e
-          @on_error.call(e)
-        end
+        decoded_token = Token.decode(token, @secret, @verify, @options)
+        env['jwt.payload'] = decoded_token.first
+        env['jwt.header'] = decoded_token.last
+        @app.call(env)
+      rescue *ERRORS_TO_RESCUE => e
+        @on_error.call(e)
       end
 
       def check_secret_type!
@@ -168,6 +166,12 @@ module Rack
           unless x.start_with?('/')
             raise ArgumentError, 'each exclude Array element must start with a /'
           end
+        end
+      end
+
+      def check_on_error_callable!
+        unless @on_error.respond_to?(:call)
+          raise ArgumentError, 'on_error argument must respond to call'
         end
       end
 
