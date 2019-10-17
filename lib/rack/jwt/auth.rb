@@ -1,5 +1,5 @@
 require 'jwt'
-
+require 'pry-byebug'
 module Rack
   module JWT
     # Authentication middleware
@@ -68,7 +68,7 @@ module Rack
         @exclude = opts.fetch(:exclude, [])
 
         # TODO: Validate that on_error is callable.
-        @on_error = opts.fetch(:on_error, &method(:default_on_error))
+        @on_error = opts.fetch(:on_error, method(:default_on_error))
 
         @secret = @secret.strip if @secret.is_a?(String)
         @options[:algorithm] = DEFAULT_ALGORITHM if @options[:algorithm].nil?
@@ -95,11 +95,12 @@ module Rack
       def verify_token(env)
         # extract the token from the Authorization: Bearer header
         # with a regex capture group.
-        token = BEARER_TOKEN_REGEX.match(env['HTTP_AUTHORIZATION'])[1]
 
         begin
           raise MissingAuthHeader if missing_auth_header?(env)
           raise InvalidAuthHeaderFormat if invalid_auth_header?(env)
+
+          token = BEARER_TOKEN_REGEX.match(env['HTTP_AUTHORIZATION'])[1]
 
           decoded_token = Token.decode(token, @secret, @verify, @options)
           env['jwt.payload'] = decoded_token.first
