@@ -1,5 +1,5 @@
 require 'jwt'
-require 'pry-byebug'
+
 module Rack
   module JWT
     # Authentication middleware
