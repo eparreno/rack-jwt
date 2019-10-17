@@ -44,6 +44,8 @@ $ gem install rack-jwt
 
 * `exclude` : optional : Array : An Array of path strings representing paths that should not be checked for the presence of a valid JWT token. Excludes sub-paths as of specified paths as well (e.g. `%w(/docs)` excludes `/docs/some/thing.html` also). Each path should start with a `/`. If a path matches the current request path this entire middleware is skipped and no authentication or verification of tokens takes place.
 
+* `on_error` : optional : Callable : An object which responds to `call` method with single `error` parameter. `error` parameter is one of `Rack::JWT::Auth::ERRORS_TO_RESCUE`. `on_error` callable object will be called if one of `Rack::JWT::Auth::ERRORS_TO_RESCUE` raised. For default handler check `Rack::JWT::Auth#default_on_error`.
+
 ## Example Server-Side Config
 
 Where `my_args` is a `Hash` containing valid keys. See `spec/example_spec.rb`

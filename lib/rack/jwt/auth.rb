@@ -38,8 +38,7 @@ module Rack
         )$
       }x
 
-      JWT_ERRORS = [
-        ::JWT::EncodeError,
+      JWT_DECODE_ERRORS = [
         ::JWT::DecodeError,
         ::JWT::VerificationError,
         ::JWT::ExpiredSignature,
@@ -56,7 +55,7 @@ module Rack
       MissingAuthHeader = Class.new(StandardError)
       InvalidAuthHeaderFormat = Class.new(StandardError)
 
-      ERRORS_TO_RESCUE = (JWT_ERRORS + [MissingAuthHeader, InvalidAuthHeaderFormat]).freeze
+      ERRORS_TO_RESCUE = (JWT_DECODE_ERRORS + [MissingAuthHeader, InvalidAuthHeaderFormat]).freeze
 
       # Initialization should fail fast with an ArgumentError
       # if any args are invalid.
@@ -67,7 +66,6 @@ module Rack
         @options = opts.fetch(:options, {})
         @exclude = opts.fetch(:exclude, [])
 
-        # TODO: Validate that on_error is callable.
         @on_error = opts.fetch(:on_error, method(:default_on_error))
 
         @secret = @secret.strip if @secret.is_a?(String)
@@ -193,8 +191,6 @@ module Rack
 
       def default_on_error(error)
         error_message = {
-          # TODO: What do we do with EncodeError.
-          ::JWT::EncodeError => 'Invalid JWT token : Encode Error',
           ::JWT::DecodeError => 'Invalid JWT token : Decode Error',
           ::JWT::VerificationError => 'Invalid JWT token : Signature Verification Error',
           ::JWT::ExpiredSignature => 'Invalid JWT token : Expired Signature (exp)',

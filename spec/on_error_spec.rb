@@ -21,7 +21,7 @@ describe Rack::JWT::Auth do
     let(:on_error) do
       lambda do |error|
         message =
-          if ::Rack::JWT::Auth::JWT_ERRORS.include?(error.class)
+          if ::Rack::JWT::Auth::JWT_DECODE_ERRORS.include?(error.class)
             'Invalid JWT token'
           elsif error.is_a?(::Rack::JWT::Auth::MissingAuthHeader)
             'Missing Authorization header'
