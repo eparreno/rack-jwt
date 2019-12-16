@@ -1,6 +1,6 @@
 # Change Log
 
-## [0.5.0](https://github.com/eparreno/rack-jwt/tree/v0.5.0) (Unreleased)
+## [0.5.0](https://github.com/eparreno/rack-jwt/tree/v0.5.0) (2019-12-16)
 [Full Changelog](https://github.com/eparreno/rack-jwt/compare/v0.4.0...v0.5.0)
 
 * Upgrade ruby-jwt to version 2.1
