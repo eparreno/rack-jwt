@@ -28,5 +28,5 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency 'rbnacl',    '>= 6.0.1'
 
   spec.add_runtime_dependency 'rack'
-  spec.add_runtime_dependency 'jwt',  '~> 2.1.0'
+  spec.add_runtime_dependency 'jwt',  '~> 2.1'
 end
