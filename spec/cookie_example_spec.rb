@@ -16,6 +16,10 @@ describe 'README examples' do
       allow(Time).to receive_message_chain(:now).and_return(time)
     end
 
+    after do
+      clear_cookies
+    end
+
     # behavior of this is changing after jwt v1.5.2 when you can specify a lambda for verify_jti
     # right now its hard-coded to verify against an MD5
     let(:jti_digest) { Digest::MD5.hexdigest([secret, Time.now.to_i].join(':').to_s) }
@@ -36,6 +40,7 @@ describe 'README examples' do
     let(:decode_args) do
       {
         secret: secret,
+        cookie: 'authtoken',
         verify: true,
         options: {
           algorithm: 'HS256',
@@ -56,9 +61,10 @@ describe 'README examples' do
     end
 
     let(:app) { Rack::JWT::Auth.new(inner_app, decode_args) }
+    let(:token) { issuer.encode(payload, secret, 'HS256') }
 
     it 'valid sample code' do
-      header 'Authorization', "Bearer #{issuer.encode(payload, secret, 'HS256')}"
+      set_cookie("authtoken=#{token}")
       get('/')
       expect(last_response.status).to eq 200
       body = JSON.parse(last_response.body, symbolize_names: true)

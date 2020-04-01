@@ -7,6 +7,7 @@ module Rack
       attr_reader :secret
       attr_reader :verify
       attr_reader :options
+      attr_reader :cookie
       attr_reader :exclude
 
       SUPPORTED_ALGORITHMS = [
@@ -44,6 +45,7 @@ module Rack
         @app     = app
         @secret  = opts.fetch(:secret, nil)
         @verify  = opts.fetch(:verify, true)
+        @cookie  = opts.fetch(:cookie, nil)
         @options = opts.fetch(:options, {})
         @exclude = opts.fetch(:exclude, [])
 
@@ -60,8 +62,11 @@ module Rack
       end
 
       def call(env)
-        if path_matches_excluded_path?(env)
-          @app.call(env)
+        return @app.call(env) if path_matches_excluded_path?(env)
+
+        if token_from_cookie?
+          return return_error('Missing token cookie') if missing_auth_cookie?(env)
+          verify_token(env)
         elsif missing_auth_header?(env)
           return_error('Missing Authorization header')
         elsif invalid_auth_header?(env)
@@ -76,7 +81,12 @@ module Rack
       def verify_token(env)
         # extract the token from the Authorization: Bearer header
         # with a regex capture group.
-        token = BEARER_TOKEN_REGEX.match(env['HTTP_AUTHORIZATION'])[1]
+        token =
+          if token_from_cookie?
+            auth_cookie(env)
+          else
+            BEARER_TOKEN_REGEX.match(env['HTTP_AUTHORIZATION'])[1]
+          end
 
         begin
           decoded_token = Token.decode(token, @secret, @verify, @options)
@@ -180,6 +190,22 @@ module Rack
 
       def missing_auth_header?(env)
         env['HTTP_AUTHORIZATION'].nil? || env['HTTP_AUTHORIZATION'].strip.empty?
+      end
+
+      def missing_auth_cookie?(env)
+        auth_cookie(env).nil?
+      end
+
+      def token_from_cookie?
+        !cookie.nil?
+      end
+
+      def auth_cookie(env)
+        cookies(env)[cookie]
+      end
+
+      def cookies(env)
+        @cookies ||= Rack::Utils.parse_cookies(env)
       end
 
       def return_error(message)
