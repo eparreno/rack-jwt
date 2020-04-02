@@ -193,7 +193,7 @@ module Rack
       end
 
       def missing_auth_cookie?(env)
-        auth_cookie(env).nil?
+        auth_cookie(env).nil? || auth_cookie(env).empty?
       end
 
       def token_from_cookie?
