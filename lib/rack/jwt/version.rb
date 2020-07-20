@@ -1,8 +1,9 @@
 module Rack
   module JWT
-    VERSION = '0.6.1'.freeze
+    VERSION = '0.7.0'.freeze
 
     CHANGE_LOG = <<-LOG
+      '0.7.0': Added ability to specify http verb per exclude and option paths
       '0.6.1': Clear jwt sub on thread local after request finishes
       '0.6.0': Add jwt sub to a thread local variable, for logging
       '0.5.0': remove logging on missing auth header
