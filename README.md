@@ -38,7 +38,10 @@ $ gem install rack-jwt
 
 * `options` : optional : Hash : A hash of options that are passed through to JWT to configure supported claims and algorithms. See [the ruby-jwt docs](https://github.com/progrium/ruby-jwt#support-for-reserved-claim-names) for much more info on the available options and how they work. These options are passed through without change to the underlying `ruby-jwt` gem. By default only expiration (exp) and Not Before (nbf) claims are verified. Pass in an algorithm choice like `{ algorithm: 'HS256' }`.
 
-* `exclude` : optional : Array : An Array of path strings representing paths that should not be checked for the presence of a valid JWT token. Excludes sub-paths as of specified paths as well (e.g. `%w(/docs)` excludes `/docs/some/thing.html` also). Each path should start with a `/`. If a path matches the current request path this entire middleware is skipped and no authentication or verification of tokens takes place.
+* `exclude` : optional : Array : An Array of path strings representing paths that should not be checked for the presence of a valid JWT token. Excludes sub-paths as of specified paths as well (e.g. `%w(/docs)` excludes `/docs/some/thing.html` also). Each path should start with a `/`. If a path matches the current request path this entire middleware is skipped and no authentication or verification of tokens takes place. If you need to check for both path and http method, you can provide a hash of the following form `{'/path' => {only: [:get, :post], except: [:patch]}` 
+
+* `optional` : optional : Array : Same as `exclude` with except that if the patch matches and there is a bad JWT token in the request, a 401 error will be thrown.
+
 
 ## Example Server-Side Config
 
