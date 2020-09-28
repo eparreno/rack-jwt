@@ -40,7 +40,7 @@ $ gem install rack-jwt
 
 * `verify` : optional : Boolean : Determines whether JWT will verify tokens keys for mismatch key types when decoded. Default is `true`. Set to `false` if you are using the `'none'` algorithm.
 
-* `cookie` : optional : String : If set, the middleware will fetch the token from the
+* `cookie_name` : optional : String : If set, the middleware will fetch the token from the
 cookie with given name. The cookie's value should be set **without Bearer prefix**.
 
 * `options` : optional : Hash : A hash of options that are passed through to JWT to configure supported claims and algorithms. See the ruby-jwt docs for [more information of the algorithms and their requirements](https://github.com/jwt/ruby-jwt#algorithms-and-usage) as well as [more information on the supported claims](https://github.com/progrium/ruby-jwt#support-for-reserved-claim-names). These options are passed through without change to the underlying `ruby-jwt` gem. By default only expiration (exp) and Not Before (nbf) claims are verified. Pass in an algorithm choice like `{ algorithm: 'HS256' }`.
