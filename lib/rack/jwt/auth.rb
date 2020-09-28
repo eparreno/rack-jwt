@@ -64,10 +64,15 @@ module Rack
       def call(env)
         return @app.call(env) if path_matches_excluded_path?(env)
 
-        if token_from_cookie?
-          return return_error('Missing token cookie') if missing_auth_cookie?(env)
-          verify_token(env)
-        elsif missing_auth_header?(env)
+        if token_cookie_name_configured?
+          if missing_auth_cookie?(env) && missing_auth_header?(env)
+            return return_error('Missing token cookie and Authorization header')
+          end
+
+          return verify_token(env)
+        end
+
+        if missing_auth_header?(env)
           return_error('Missing Authorization header')
         elsif invalid_auth_header?(env)
           return_error('Invalid Authorization header format')
@@ -82,7 +87,7 @@ module Rack
         # extract the token from the Authorization: Bearer header
         # with a regex capture group.
         token =
-          if token_from_cookie?
+          if token_cookie_name_configured? && auth_cookie_present?(env)
             auth_cookie(env)
           else
             BEARER_TOKEN_REGEX.match(env['HTTP_AUTHORIZATION'])[1]
@@ -196,7 +201,11 @@ module Rack
         auth_cookie(env).nil? || auth_cookie(env).empty?
       end
 
-      def token_from_cookie?
+      def auth_cookie_present?(env)
+        auth_cookie(env) && !auth_cookie(env).empty?
+      end
+
+      def token_cookie_name_configured?
         !cookie.nil?
       end
 

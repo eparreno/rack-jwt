@@ -12,7 +12,7 @@ describe Rack::JWT::Auth do
 
   let(:app) { Rack::JWT::Auth.new(inner_app, secret: secret) }
 
-  describe 'when handling exlusions' do
+  describe 'when handling exclusions' do
     describe 'passes through matching exact path' do
       let(:app) { Rack::JWT::Auth.new(inner_app, secret: secret, exclude: ['/static']) }
 
