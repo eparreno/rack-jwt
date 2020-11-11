@@ -114,7 +114,7 @@ module Rack
 
       def check_secret!
         if @secret.nil? || (@secret.is_a?(String) && @secret.empty?)
-          unless @options[:algorithm] == 'none'
+          if @options[:algorithm] != 'none' && @options[:jwks].nil?
             raise ArgumentError, 'secret argument can only be nil/empty for the "none" algorithm'
           end
         end

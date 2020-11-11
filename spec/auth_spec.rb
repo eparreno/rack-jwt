@@ -93,6 +93,17 @@ describe Rack::JWT::Auth do
         end
       end
 
+      describe 'when algorithm is given and secret is nil and verify not false and jwks given' do
+        let(:app) { Rack::JWT::Auth.new(inner_app, secret: nil, verify: false, options: { algorithm: 'none' }) }
+
+        it 'succeeds' do
+          jwk = JWT::JWK.new(OpenSSL::PKey::RSA.new(2048))
+          header 'Authorization', "Bearer #{issuer.encode(payload, jwk.keypair, 'RS512', {kid: jwk.kid})}"
+          get('/')
+          expect(last_response.status).to eq 200
+        end
+      end
+
       describe 'when algorithm "none" and secret not nil but verify is false' do
         it 'raises an exception' do
           args = { secret: secret, verify: false, options: { algorithm: 'none' } }
