@@ -1,8 +1,9 @@
 module Rack
   module JWT
-    VERSION = '0.7.0'.freeze
+    VERSION = '1.0.0'.freeze
 
     CHANGE_LOG = <<-LOG
+      '1.0.0': Rebase from original rack-jwt to get jwt 2.1 and other updates
       '0.7.0': Added ability to specify http verb per exclude and option paths
       '0.6.1': Clear jwt sub on thread local after request finishes
       '0.6.0': Add jwt sub to a thread local variable, for logging
