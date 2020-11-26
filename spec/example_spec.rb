@@ -9,8 +9,6 @@ describe 'README examples' do
     ->(env) { [200, env, [payload.to_json]] }
   end
 
-  let(:app) { Rack::JWT::Auth.new(inner_app, secret: secret) }
-
   describe 'work as expected with' do
     let(:time) { Time.new(2014, 02, 06, 16, 12, 0, '-08:00') }
 

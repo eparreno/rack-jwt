@@ -1,5 +1,12 @@
 # Change Log
 
+## [0.6.0](https://github.com/eparreno/rack-jwt/tree/v0.5.0) (2020-09-29)
+[Full Changelog](https://github.com/eparreno/rack-jwt/compare/v0.5.0...v0.6.0)
+
+* Add support for the token to be sent in a cookie, with the name of the cookie 
+  configurable via the `cookie_name` option. Headers are still available as a 
+  fallback if this is enabled and the cookie is not present.
+
 ## [0.5.0](https://github.com/eparreno/rack-jwt/tree/v0.5.0) (2019-12-16)
 [Full Changelog](https://github.com/eparreno/rack-jwt/compare/v0.4.0...v0.5.0)
 

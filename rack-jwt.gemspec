@@ -20,13 +20,14 @@ Gem::Specification.new do |spec|
   spec.platform      = Gem::Platform::RUBY
   spec.required_ruby_version = '>= 2.3.8'
 
-  spec.add_development_dependency 'bundler',   '>= 1.16.2'
-  spec.add_development_dependency 'rake',      '>= 12.0.0'
-  spec.add_development_dependency 'rack-test', '>= 1.0.0'
-  spec.add_development_dependency 'rspec',     '>= 3.8.0'
-  spec.add_development_dependency 'simplecov', '>= 0.16.0'
-  spec.add_development_dependency 'rbnacl',    '>= 6.0.1'
+  spec.add_development_dependency 'bundler',       '>= 1.16.2'
+  spec.add_development_dependency 'rack-test',     '>= 1.0.0'
+  spec.add_development_dependency 'rake',          '>= 12.0.0'
+  spec.add_development_dependency 'rbnacl',        '>= 6.0.1'
+  spec.add_development_dependency 'rspec',         '>= 3.8.0'
+  spec.add_development_dependency 'rubocop',       '= 0.81.0'
+  spec.add_development_dependency 'simplecov',     '>= 0.16.0'
 
-  spec.add_runtime_dependency 'rack'
   spec.add_runtime_dependency 'jwt',  '~> 2.1'
+  spec.add_runtime_dependency 'rack'
 end
