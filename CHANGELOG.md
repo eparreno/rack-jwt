@@ -1,6 +1,12 @@
 # Change Log
 
-## [0.6.0](https://github.com/eparreno/rack-jwt/tree/v0.5.0) (2020-09-29)
+## [0.7.0](https://github.com/eparreno/rack-jwt/tree/v0.7.0) (2021-04-27)
+[Full Changelog](https://github.com/eparreno/rack-jwt/compare/v0.6.0...v0.7.0)
+
+* Change the exclude list format to specify http methods
+* When a path is in the exclude list, we still process the token if one is supplied 
+
+## [0.6.0](https://github.com/eparreno/rack-jwt/tree/v0.6.0) (2020-09-29)
 [Full Changelog](https://github.com/eparreno/rack-jwt/compare/v0.5.0...v0.6.0)
 
 * Add support for the token to be sent in a cookie, with the name of the cookie 

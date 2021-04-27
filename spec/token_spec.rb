@@ -344,4 +344,57 @@ describe Rack::JWT::Auth do
       end
     end
   end
+
+  describe 'exclude list' do
+    let(:app) do
+      Rack::JWT::Auth.new(
+        inner_app, secret: nil, verify: false, options: { algorithm: 'none' },
+        exclude: [{ path: '/static', methods: [:get] }]
+      )
+    end
+
+    describe 'when path is in exclude list' do
+      describe 'when JWT token is in header' do
+        it 'returns a 200 and parses the JWT token' do
+          header 'Authorization', "Bearer #{issuer.encode(payload, nil, 'none')}"
+          get('/static')
+          expect(last_response.status).to eq 200
+          expect(last_response.headers['jwt.header']).to eq({"typ"=>"JWT", "alg"=>"none"})
+          expect(last_response.headers['jwt.payload']).to eq("foo" => "bar")
+        end
+      end
+
+      describe 'when JWT token is missing from header' do
+        it 'returns a 200' do
+          get('/static')
+          expect(last_response.status).to eq 200
+          expect(last_response.headers['jwt.header']).to be_nil
+          expect(last_response.headers['jwt.payload']).to be_nil
+        end
+      end
+    end
+
+    describe 'when path is not in exclude list' do
+      describe 'when JWT token is in header' do
+        it 'returns a 200 and parses the JWT token' do
+          header 'Authorization', "Bearer #{issuer.encode(payload, nil, 'none')}"
+          get('/book')
+          expect(last_response.status).to eq 200
+          expect(last_response.headers['jwt.header']).to eq({"typ"=>"JWT", "alg"=>"none"})
+          expect(last_response.headers['jwt.payload']).to eq("foo" => "bar")
+        end
+      end
+
+      describe 'when JWT token is missing from header' do
+        it 'returns a 401' do
+          get('/book')
+          expect(last_response.status).to eq 401
+          body = JSON.parse(last_response.body, symbolize_names: true)
+          expect(body).to eq(error: 'Missing Authorization header')
+          expect(last_response.headers['jwt.header']).to be_nil
+          expect(last_response.headers['jwt.payload']).to be_nil
+        end
+      end
+    end
+  end
 end

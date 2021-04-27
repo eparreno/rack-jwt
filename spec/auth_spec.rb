@@ -116,31 +116,31 @@ describe Rack::JWT::Auth do
     end
 
     # see also exclusion_spec.rb
-    describe 'exclude' do
-      describe 'when a type other than Array provided' do
+    describe 'when exclude is in a wrong format' do
+      describe 'when a type other than Array is provided' do
         it 'raises an exception' do
           args = { secret: secret, exclude: {} }
           expect { Rack::JWT::Auth.new(inner_app, args) }.to raise_error(ArgumentError)
         end
       end
 
-      describe 'when Array contains non-String elements' do
+      describe 'when Array contains non-Hash element' do
         it 'raises an exception' do
-          args = { secret: secret, exclude: ['/foo', nil, '/bar'] }
+          args = { secret: secret, exclude: ['/foo', '/bar'] }
           expect { Rack::JWT::Auth.new(inner_app, args) }.to raise_error(ArgumentError)
         end
       end
 
-      describe 'when Array contains empty String elements' do
+      describe 'when Array contains element with unexpected keys' do
         it 'raises an exception' do
-          args = { secret: secret, exclude: ['/foo', '', '/bar'] }
+          args = { secret: secret, exclude: [ { path: '/static', foo: :all } ] }
           expect { Rack::JWT::Auth.new(inner_app, args) }.to raise_error(ArgumentError)
         end
       end
 
-      describe 'when Array contains elements that do not start with a /' do
+      describe 'when Array contains element whose path does not start with a /' do
         it 'raises an exception' do
-          args = { secret: secret, exclude: ['/foo', 'bar', '/baz'] }
+          args = { secret: secret, exclude: [ { path: 'static', methods: :all } ] }
           expect { Rack::JWT::Auth.new(inner_app, args) }.to raise_error(ArgumentError)
         end
       end

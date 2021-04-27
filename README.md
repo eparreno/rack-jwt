@@ -45,7 +45,7 @@ cookie with given name. The cookie's value should be set **without Bearer prefix
 
 * `options` : optional : Hash : A hash of options that are passed through to JWT to configure supported claims and algorithms. See the ruby-jwt docs for [more information of the algorithms and their requirements](https://github.com/jwt/ruby-jwt#algorithms-and-usage) as well as [more information on the supported claims](https://github.com/progrium/ruby-jwt#support-for-reserved-claim-names). These options are passed through without change to the underlying `ruby-jwt` gem. By default only expiration (exp) and Not Before (nbf) claims are verified. Pass in an algorithm choice like `{ algorithm: 'HS256' }`.
 
-* `exclude` : optional : Array : An Array of path strings representing paths that should not be checked for the presence of a valid JWT token. Excludes sub-paths as of specified paths as well (e.g. `%w(/docs)` excludes `/docs/some/thing.html` also). Each path should start with a `/`. If a path matches the current request path this entire middleware is skipped and no authentication or verification of tokens takes place.
+* `exclude` : optional : Array : An array of hashes with keys `path` and `methods`. Each hash specifies a path string and http methods (`:all` or a select list, such as `[:get]`) representing a path that should not be checked for the presence of a valid JWT token. Excludes sub-paths of specified paths as well (e.g. `%w(/docs)` excludes `/docs/some/thing.html` also). Each path should start with a `/`. If a path matches the current request path, authentication and verification of token is not required, but a token will be parsed and verified if one is supplied.
 
 ## Example Server-Side Config
 

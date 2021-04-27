@@ -64,25 +64,30 @@ module Rack
       end
 
       def call(env)
-        return @app.call(env) if path_matches_excluded_path?(env)
+        auth_is_required = !path_matches_excluded_path?(env)
 
-        if auth_cookie_enabled? && missing_auth_cookie?(env) && missing_auth_header?(env)
-          return return_error('Missing token cookie and Authorization header')
-        end
-        if auth_cookie_enabled? && empty_auth_cookie?(env)
-          return return_error('Empty token cookie')
-        end
-        if auth_cookie_disabled? && missing_auth_header?(env)
-          return return_error('Missing Authorization header')
-        end
-        if auth_cookie_disabled? && invalid_auth_header?(env)
-          return return_error('Invalid Authorization header format')
+        if auth_is_required
+          if auth_cookie_enabled? && missing_auth_cookie?(env) && missing_auth_header?(env)
+            return return_error('Missing token cookie and Authorization header')
+          end
+          if auth_cookie_enabled? && empty_auth_cookie?(env)
+            return return_error('Empty token cookie')
+          end
+          if auth_cookie_disabled? && missing_auth_header?(env)
+            return return_error('Missing Authorization header')
+          end
+          if auth_cookie_disabled? && invalid_auth_header?(env)
+            return return_error('Invalid Authorization header format')
+          end
         end
 
         cookie_token = extract_cookie_token(env)
         header_token = extract_header_token(env)
 
-        verify_token(cookie_token || header_token, env)
+        if auth_is_required || cookie_token || header_token
+          verify_token(cookie_token || header_token, env)
+        end
+
         @app.call(env)
       rescue ::JWT::VerificationError
         return_error('Invalid JWT token : Signature Verification Error')
@@ -159,20 +164,26 @@ module Rack
       end
 
       def check_exclude_type!
-        raise ArgumentError, 'exclude argument must be an Array' unless @exclude.is_a?(Array)
+        raise ArgumentError, 'exclude argument must be an Array' unless exclude.is_a?(Array)
 
-        @exclude.each do |x|
-          raise ArgumentError, 'each exclude Array element must be a String' unless x.is_a?(String)
-          raise ArgumentError, 'each exclude Array element must not be empty' if x.empty?
+        exclude.each do |x|
+          raise ArgumentError, 'each exclude Array element must be a Hash' unless x.is_a?(Hash)
 
-          unless x.start_with?('/')
-            raise ArgumentError, 'each exclude Array element must start with a /'
+          if x.keys.sort != %i(methods path)
+            raise ArgumentError, 'each exclude Array element must have only path and methods as keys'
+          end
+
+          unless x[:path].start_with?('/')
+            raise ArgumentError, 'each exclude Array element path value must start with a /'
           end
         end
       end
 
       def path_matches_excluded_path?(env)
-        @exclude.any? { |ex| env['PATH_INFO'].start_with?(ex) }
+        exclude.any? do |ex|
+          env['PATH_INFO'].start_with?(ex[:path]) &&
+            (ex[:methods] == :all || ex[:methods].include?(env['REQUEST_METHOD'].downcase.to_sym))
+        end
       end
 
       def valid_auth_header?(env)
