@@ -1,8 +1,9 @@
 module Rack
   module JWT
-    VERSION = '0.7.0'.freeze
+    VERSION = '0.8.0'.freeze
 
     CHANGE_LOG = <<-LOG
+      '0.8.0': Update jwt version in gemspec file
       '0.7.0': Added ability to specify http verb per exclude and option paths
       '0.6.1': Clear jwt sub on thread local after request finishes
       '0.6.0': Add jwt sub to a thread local variable, for logging
