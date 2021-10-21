@@ -14,9 +14,9 @@ module Rack
         # if using an unsigned token ('none' alg) you *must* set the `secret`
         # to `nil` in which case any user provided `secret` will be ignored.
         if alg == 'none'
-          ::JWT.encode(payload, nil, alg)
+          ::JWT.encode(payload, nil, alg, { typ: 'JWT' })
         else
-          ::JWT.encode(payload, secret, alg)
+          ::JWT.encode(payload, secret, alg, { typ: 'JWT' })
         end
       end
 
