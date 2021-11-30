@@ -152,22 +152,31 @@ module Rack
         end
 
         @exclude.each do |x|
-          unless x.is_a?(String)
-            raise ArgumentError, 'each exclude Array element must be a String'
+          unless x.is_a?(String) || x.is_a?(Regexp)
+            raise ArgumentError, 'each exclude Array element must be a String or a Regexp'
           end
 
-          if x.empty?
+          if x.to_s.empty?
             raise ArgumentError, 'each exclude Array element must not be empty'
           end
 
-          unless x.start_with?('/')
+          # Perhaps surprisingly, Regexp#inspect actually produces the more
+          # natural version of the string than #to_s.
+          as_s = x.is_a?(Regexp) ? x.inspect : x
+          unless as_s.start_with?('/')
             raise ArgumentError, 'each exclude Array element must start with a /'
           end
         end
       end
 
       def path_matches_excluded_path?(env)
-        @exclude.any? { |ex| env['PATH_INFO'].start_with?(ex) }
+        @exclude.any? do |ex|
+          if ex.is_a?(Regexp)
+            ex.match?(env['PATH_INFO'])
+          else
+            env['PATH_INFO'].start_with?(ex)
+          end
+        end
       end
 
       def valid_auth_header?(env)
