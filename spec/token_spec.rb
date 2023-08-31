@@ -143,12 +143,8 @@ describe Rack::JWT::Auth do
     end
 
     describe 'with valid EC ES256 key token' do
-      ecdsa = OpenSSL::PKey::EC.new('prime256v1')
-      ecdsa.generate_key
-      let(:ecdsa) { ecdsa }
-      ecdsa_pub = OpenSSL::PKey::EC.new(ecdsa)
-      ecdsa_pub.private_key = nil
-      let(:ecdsa_pub) { ecdsa_pub }
+      let(:ecdsa) { OpenSSL::PKey::EC.generate('prime256v1') }
+      let(:ecdsa_pub) { OpenSSL::PKey::EC.new(ecdsa) }
       let(:app) { Rack::JWT::Auth.new(inner_app, secret: ecdsa_pub, verify: verify, options: { algorithm: 'ES256' }) }
 
       it 'returns a 200' do
@@ -163,12 +159,8 @@ describe Rack::JWT::Auth do
     end
 
     describe 'with valid EC ES384 key token' do
-      ecdsa = OpenSSL::PKey::EC.new('secp384r1')
-      ecdsa.generate_key
-      let(:ecdsa) { ecdsa }
-      ecdsa_pub = OpenSSL::PKey::EC.new(ecdsa)
-      ecdsa_pub.private_key = nil
-      let(:ecdsa_pub) { ecdsa_pub }
+      let(:ecdsa) { OpenSSL::PKey::EC.generate('secp384r1') }
+      let(:ecdsa_pub) { OpenSSL::PKey::EC.new(ecdsa) }
       let(:app) { Rack::JWT::Auth.new(inner_app, secret: ecdsa_pub, verify: verify, options: { algorithm: 'ES384' }) }
 
       it 'returns a 200' do
@@ -183,12 +175,8 @@ describe Rack::JWT::Auth do
     end
 
     describe 'with valid EC ES512 key token' do
-      ecdsa = OpenSSL::PKey::EC.new('secp521r1')
-      ecdsa.generate_key
-      let(:ecdsa) { ecdsa }
-      ecdsa_pub = OpenSSL::PKey::EC.new(ecdsa)
-      ecdsa_pub.private_key = nil
-      let(:ecdsa_pub) { ecdsa_pub }
+      let(:ecdsa) { OpenSSL::PKey::EC.generate('secp521r1') }
+      let(:ecdsa_pub) { OpenSSL::PKey::EC.new(ecdsa) }
       let(:app) { Rack::JWT::Auth.new(inner_app, secret: ecdsa_pub, verify: verify, options: { algorithm: 'ES512' }) }
 
       it 'returns a 200' do
