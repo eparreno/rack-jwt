@@ -1,7 +1,7 @@
 # Rack::JWT
 
 [![Gem Version](https://badge.fury.io/rb/rack-jwt.svg)](http://badge.fury.io/rb/rack-jwt)
-[![Build Status](https://travis-ci.org/eparreno/rack-jwt.svg)](https://travis-ci.org/eparreno/rack-jwt)
+[![Build Status](https://github.com/eparreno/rack-jwt/actions/workflows/ruby.yml/badge.svg)](https://github.com/eparreno/rack-jwt/actions/workflows/ruby.yml/badge.svg)
 [![Code Climate](https://codeclimate.com/github/eparreno/rack-jwt/badges/gpa.svg)](https://codeclimate.com/github/eparreno/rack-jwt)
 
 ## About
@@ -10,7 +10,7 @@ This gem provides JSON Web Token (JWT) based authentication.
 
 ## Requirements
 
-- Ruby 2.3.8 or greater
+- Ruby 3.0 or greater
 
 ## Installation
 
