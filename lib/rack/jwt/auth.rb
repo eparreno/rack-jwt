@@ -38,6 +38,25 @@ module Rack
         )$
       }x
 
+      JWT_DECODE_ERRORS = [
+        ::JWT::DecodeError,
+        ::JWT::VerificationError,
+        ::JWT::ExpiredSignature,
+        ::JWT::IncorrectAlgorithm,
+        ::JWT::ImmatureSignature,
+        ::JWT::InvalidIssuerError,
+        ::JWT::InvalidIatError,
+        ::JWT::InvalidAudError,
+        ::JWT::InvalidSubError,
+        ::JWT::InvalidJtiError,
+        ::JWT::InvalidPayload,
+      ].freeze
+
+      MissingAuthHeader = Class.new(StandardError)
+      InvalidAuthHeaderFormat = Class.new(StandardError)
+
+      ERRORS_TO_RESCUE = (JWT_DECODE_ERRORS + [MissingAuthHeader, InvalidAuthHeaderFormat]).freeze
+
       # Initialization should fail fast with an ArgumentError
       # if any args are invalid.
       def initialize(app, opts = {})
@@ -47,7 +66,9 @@ module Rack
         @options = opts.fetch(:options, {})
         @exclude = opts.fetch(:exclude, [])
 
-        @secret  = @secret.strip if @secret.is_a?(String)
+        @on_error = opts.fetch(:on_error, method(:default_on_error))
+
+        @secret = @secret.strip if @secret.is_a?(String)
         @options[:algorithm] = DEFAULT_ALGORITHM if @options[:algorithm].nil?
 
         check_secret_type!
@@ -57,15 +78,12 @@ module Rack
         check_options_type!
         check_valid_algorithm!
         check_exclude_type!
+        check_on_error_callable!
       end
 
       def call(env)
         if path_matches_excluded_path?(env)
           @app.call(env)
-        elsif missing_auth_header?(env)
-          return_error('Missing Authorization header')
-        elsif invalid_auth_header?(env)
-          return_error('Invalid Authorization header format')
         else
           verify_token(env)
         end
@@ -74,36 +92,19 @@ module Rack
       private
 
       def verify_token(env)
+        raise MissingAuthHeader if missing_auth_header?(env)
+        raise InvalidAuthHeaderFormat if invalid_auth_header?(env)
+
         # extract the token from the Authorization: Bearer header
         # with a regex capture group.
         token = BEARER_TOKEN_REGEX.match(env['HTTP_AUTHORIZATION'])[1]
 
-        begin
-          decoded_token = Token.decode(token, @secret, @verify, @options)
-          env['jwt.payload'] = decoded_token.first
-          env['jwt.header'] = decoded_token.last
-          @app.call(env)
-        rescue ::JWT::VerificationError
-          return_error('Invalid JWT token : Signature Verification Error')
-        rescue ::JWT::ExpiredSignature
-          return_error('Invalid JWT token : Expired Signature (exp)')
-        rescue ::JWT::IncorrectAlgorithm
-          return_error('Invalid JWT token : Incorrect Key Algorithm')
-        rescue ::JWT::ImmatureSignature
-          return_error('Invalid JWT token : Immature Signature (nbf)')
-        rescue ::JWT::InvalidIssuerError
-          return_error('Invalid JWT token : Invalid Issuer (iss)')
-        rescue ::JWT::InvalidIatError
-          return_error('Invalid JWT token : Invalid Issued At (iat)')
-        rescue ::JWT::InvalidAudError
-          return_error('Invalid JWT token : Invalid Audience (aud)')
-        rescue ::JWT::InvalidSubError
-          return_error('Invalid JWT token : Invalid Subject (sub)')
-        rescue ::JWT::InvalidJtiError
-          return_error('Invalid JWT token : Invalid JWT ID (jti)')
-        rescue ::JWT::DecodeError
-          return_error('Invalid JWT token : Decode Error')
-        end
+        decoded_token = Token.decode(token, @secret, @verify, @options)
+        env['jwt.payload'] = decoded_token.first
+        env['jwt.header'] = decoded_token.last
+        @app.call(env)
+      rescue *ERRORS_TO_RESCUE => e
+        @on_error.call(e)
       end
 
       def check_secret_type!
@@ -166,6 +167,12 @@ module Rack
         end
       end
 
+      def check_on_error_callable!
+        unless @on_error.respond_to?(:call)
+          raise ArgumentError, 'on_error argument must respond to call'
+        end
+      end
+
       def path_matches_excluded_path?(env)
         @exclude.any? { |ex| env['PATH_INFO'].start_with?(ex) }
       end
@@ -182,7 +189,23 @@ module Rack
         env['HTTP_AUTHORIZATION'].nil? || env['HTTP_AUTHORIZATION'].strip.empty?
       end
 
-      def return_error(message)
+      def default_on_error(error)
+        error_message = {
+          ::JWT::DecodeError => 'Invalid JWT token : Decode Error',
+          ::JWT::VerificationError => 'Invalid JWT token : Signature Verification Error',
+          ::JWT::ExpiredSignature => 'Invalid JWT token : Expired Signature (exp)',
+          ::JWT::IncorrectAlgorithm => 'Invalid JWT token : Incorrect Key Algorithm',
+          ::JWT::ImmatureSignature => 'Invalid JWT token : Immature Signature (nbf)',
+          ::JWT::InvalidIssuerError => 'Invalid JWT token : Invalid Issuer (iss)',
+          ::JWT::InvalidIatError => 'Invalid JWT token : Invalid Issued At (iat)',
+          ::JWT::InvalidAudError => 'Invalid JWT token : Invalid Audience (aud)',
+          ::JWT::InvalidSubError => 'Invalid JWT token : Invalid Subject (sub)',
+          ::JWT::InvalidJtiError => 'Invalid JWT token : Invalid JWT ID (jti)',
+          ::JWT::InvalidPayload => 'Invalid JWT token : Invalid Payload',
+          MissingAuthHeader => 'Missing Authorization header',
+          InvalidAuthHeaderFormat => 'Invalid Authorization header format'
+        }
+        message = error_message.fetch(error.class, 'Default')
         body    = { error: message }.to_json
         headers = { 'Content-Type' => 'application/json' }
 

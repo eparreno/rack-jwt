@@ -145,5 +145,16 @@ describe Rack::JWT::Auth do
         end
       end
     end
+
+    describe 'on_error' do
+      let(:app) { Rack::JWT::Auth.new(inner_app, secret: secret) }
+
+      describe 'when non-callable type provided' do
+        it 'raises an exception' do
+          args = { secret: secret, on_error: [] }
+          expect { Rack::JWT::Auth.new(inner_app, args) }.to raise_error(ArgumentError)
+        end
+      end
+    end
   end
 end
