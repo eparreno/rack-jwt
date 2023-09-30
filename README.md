@@ -36,6 +36,10 @@ $ gem install rack-jwt
 
 `Rack::JWT::Auth` accepts several configuration options. All options are passed in a single Ruby Hash:
 
+* `token_location` : optional : `Symbol` || `Hash`: By default `:header` location is used meaning that
+rack-jwt expects the token to be passed in the `Authorization` header. If you want to use token from
+cookies you should set it to `{ cookie: COOKIE_NAME }`
+
 * `secret` : required : `String` || `OpenSSL::PKey::RSA` || `OpenSSL::PKey::EC` : A cryptographically secure String (for HMAC algorithms) or a public key object of an appropriate type for public key algorithms. Set to `nil` if you are using the `'none'` algorithm.
 
 * `verify` : optional : Boolean : Determines whether JWT will verify tokens keys for mismatch key types when decoded. Default is `true`. Set to `false` if you are using the `'none'` algorithm.
