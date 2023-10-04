@@ -3,6 +3,7 @@
 ## master
 
 * Add cookie auth option.
+* Add JWK support.
 
 ## [0.6.0](https://github.com/eparreno/rack-jwt/tree/v0.6.0) (2023-08-31)
 [Full Changelog](https://github.com/eparreno/rack-jwt/compare/v0.5.0...v0.6.0)
