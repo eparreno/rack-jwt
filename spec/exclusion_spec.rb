@@ -49,6 +49,18 @@ describe Rack::JWT::Auth do
       end
     end
 
+    describe 'passes through when root is excluded' do
+      let(:app) { Rack::JWT::Auth.new(inner_app, secret: secret, exclude: ['/']) }
+
+      it 'returns a 200' do
+        get('/')
+        expect(last_response.status).to eq 200
+
+        get('/somewhere')
+        expect(last_response.status).to eq 401
+      end
+    end
+
     describe 'fails when no matching path and no token' do
       let(:app) { Rack::JWT::Auth.new(inner_app, secret: secret, exclude: %w(/docs /books /static)) }
 

@@ -153,7 +153,10 @@ module Rack
       end
 
       def path_matches_excluded_path?(env)
-        @exclude.any? { |ex| env['PATH_INFO'].start_with?(ex) }
+        @exclude.any? { |ex|
+          path = env['PATH_INFO']
+          ex == '/' ? path == ex : path.start_with?(ex)
+        }
       end
 
       def return_error(message)
