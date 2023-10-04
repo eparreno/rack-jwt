@@ -22,6 +22,15 @@ describe Rack::JWT::Auth do
       end
     end
 
+    describe 'passes through matching regexp' do
+      let(:app) { Rack::JWT::Auth.new(inner_app, secret: secret, exclude: [/stati+/]) }
+
+      it 'returns a 200' do
+        get('/static')
+        expect(last_response.status).to eq 200
+      end
+    end
+
     describe 'passes through matching exact path with trailing slash' do
       let(:app) { Rack::JWT::Auth.new(inner_app, secret: secret, exclude: ['/static']) }
 
