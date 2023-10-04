@@ -142,6 +142,23 @@ describe Rack::JWT::Auth do
       end
     end
 
+    describe 'with valid JWKS request' do
+      let(:rsa_private) { OpenSSL::PKey::RSA.generate(2048) }
+      let(:rsa_public)  { rsa_private.public_key }
+      let(:jwk) { JWT::JWK.new(rsa_private) }
+      let(:app) { Rack::JWT::Auth.new(inner_app, secret: nil, verify: verify, options: { algorithm: 'RS512', jwks: { keys: [jwk.export] }}) }
+
+      it 'returns a 200' do
+        header 'Authorization', "Bearer #{issuer.encode(payload, rsa_private, 'RS512', kid: jwk.kid)}"
+        get('/')
+        expect(last_response.status).to eq 200
+        body = JSON.parse(last_response.body, symbolize_names: true)
+        expect(body).to eq(payload)
+        expect(last_response.headers['jwt.header']).to eq({"typ"=>"JWT", "alg"=>"RS512", "kid" => jwk.kid})
+        expect(last_response.headers['jwt.payload']).to eq("foo" => "bar")
+      end
+    end
+
     describe 'with valid EC ES256 key token' do
       let(:ecdsa) { OpenSSL::PKey::EC.generate('prime256v1') }
       let(:ecdsa_pub) { OpenSSL::PKey::EC.new(ecdsa) }

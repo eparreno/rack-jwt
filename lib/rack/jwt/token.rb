@@ -7,17 +7,19 @@ module Rack
       TOKEN_REGEX = /\A([a-zA-Z0-9\-\_\~\+\\]+\.[a-zA-Z0-9\-\_\~\+\\]+\.[a-zA-Z0-9\-\_\~\+\\]*)\z/
       DEFAULT_HEADERS = {typ: 'JWT'}
 
-      def self.encode(payload, secret, alg = 'HS256')
+      def self.encode(payload, secret, alg = 'HS256', headers = {})
         raise 'Invalid payload. Must be a Hash.' unless payload.is_a?(Hash)
         raise 'Invalid secret type.'             unless secret_of_valid_type?(secret)
         raise 'Unsupported algorithm'            unless algorithm_supported?(alg)
 
+        headers = DEFAULT_HEADERS.merge(headers)
+
         # if using an unsigned token ('none' alg) you *must* set the `secret`
         # to `nil` in which case any user provided `secret` will be ignored.
         if alg == 'none'
-          ::JWT.encode(payload, nil, alg, DEFAULT_HEADERS)
+          ::JWT.encode(payload, nil, alg, headers)
         else
-          ::JWT.encode(payload, secret, alg, DEFAULT_HEADERS)
+          ::JWT.encode(payload, secret, alg, headers)
         end
       end
 
